@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+from plot import add_visualization_to_analyzer 
 
 class FamilyGroupAnalyzer:
     def __init__(self, csv_path):
@@ -180,6 +181,8 @@ class FamilyGroupAnalyzer:
         results_df = pd.DataFrame(export_data)
         results_df.to_csv(output_path, index=False)
         print(f"\nResults exported to {output_path}")
+        
+
 
 def main():
     # File paths
@@ -188,6 +191,9 @@ def main():
     
     # Initialize analyzer
     analyzer = FamilyGroupAnalyzer(input_file)
+    
+    # Add visualization capability
+    add_visualization_to_analyzer(FamilyGroupAnalyzer)
     
     # Read and process data
     if analyzer.read_csv():
@@ -198,6 +204,9 @@ def main():
         
         # Print results
         analyzer.print_results()
+        
+        # Create and save plots
+        analyzer.plot_and_save_groups()
         
         # Export results
         analyzer.export_results(output_file)
