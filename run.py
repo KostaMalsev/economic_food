@@ -100,7 +100,7 @@ class FamilyGroupAnalyzer:
         return sum(v * w for v, w in zip(values, self.zu_weights[1:])) + self.zu_weights[0]
     
     def analyze_groups(self):
-        """Group families and calculate statistics with weighted ZL and ZU"""
+        """Group families and calculate statistics including poverty line"""
         if self.df is None:
             print("Please load the CSV file first")
             return
@@ -111,10 +111,12 @@ class FamilyGroupAnalyzer:
             'expenses': [],
             'zu': 0,
             'zl': 0,
-            'families': []
+            'families': [],
+            'poverty_line': 0,  # New field for poverty line
+            'below_poverty': 0  # New field for count of families below poverty line
         })
         
-        # Process each row
+        # First pass: collect expenses and basic stats
         for _, row in self.df.iterrows():
             group_key = self.create_group_key(row)
             
@@ -127,19 +129,38 @@ class FamilyGroupAnalyzer:
             groups[group_key]['zu'] += self.calculate_weighted_zu(row)
             groups[group_key]['zl'] += self.calculate_weighted_zl(row)
         
+        # Second pass: calculate poverty lines and related statistics
+        for group_key, data in groups.items():
+            expenses = np.array(data['expenses'])
+            median_exp = np.median(expenses)
+            data['poverty_line'] = median_exp / 2
+            data['below_poverty'] = sum(expenses < data['poverty_line'])
+            data['poverty_rate'] = (data['below_poverty'] / data['count']) * 100
+            
+            # Add additional poverty-related statistics
+            data['poverty_gap'] = np.mean([
+                (data['poverty_line'] - exp) / data['poverty_line'] 
+                for exp in expenses if exp < data['poverty_line']
+            ]) if data['below_poverty'] > 0 else 0
+            
+            # Calculate severity of poverty (squared poverty gap)
+            data['poverty_severity'] = np.mean([
+                ((data['poverty_line'] - exp) / data['poverty_line']) ** 2 
+                for exp in expenses if exp < data['poverty_line']
+            ]) if data['below_poverty'] > 0 else 0
+        
         self.groups = groups
         return groups
     
     def print_results(self):
-        """Print analysis results"""
+        """Print analysis results including poverty statistics"""
         if self.groups is None:
             print("Please run analysis first")
             return
             
-        print("\nFamily Group Analysis Results (with Weighted ZL and ZU)")
-        print("-" * 70)
+        print("\nFamily Group Analysis Results (including Poverty Analysis)")
+        print("-" * 80)
         
-        # Sort groups by count in descending order
         sorted_groups = sorted(self.groups.items(), key=lambda x: x[1]['count'], reverse=True)
         
         for i, (pattern, data) in enumerate(sorted_groups, 1):
@@ -147,12 +168,18 @@ class FamilyGroupAnalyzer:
             print(f"Count: {data['count']} families")
             print(f"Weighted ZU: {data['zu']:.2f}")
             print(f"Weighted ZL: {data['zl']:.2f}")
-            print("Expenses Statistics:")
+            print("\nExpenditure Statistics:")
             print(f"  Mean: {np.mean(data['expenses']):.2f}")
+            print(f"  Median: {np.median(data['expenses']):.2f}")
             print(f"  Min: {min(data['expenses']):.2f}")
             print(f"  Max: {max(data['expenses']):.2f}")
-            print(f"Family IDs: {', '.join(map(str, data['families'][:5]))}...")
-            print("-" * 50)
+            print("\nPoverty Analysis:")
+            print(f"  Poverty Line: {data['poverty_line']:.2f}")
+            print(f"  Families Below Poverty: {data['below_poverty']} ({data['poverty_rate']:.1f}%)")
+            print(f"  Poverty Gap: {data['poverty_gap']:.3f}")
+            print(f"  Poverty Severity: {data['poverty_severity']:.3f}")
+            print("-" * 60)
+    
     
     def export_results(self, output_path):
         """Export results to CSV file"""
