@@ -218,8 +218,37 @@ class FamilyGroupAnalyzer:
             print(f"  Poverty Severity: {data['poverty_severity']:.3f}")
             print("-" * 60)
 
+    
+    def get_family_description(self, pattern):
+        """
+        Generate a human-readable description of the family composition
+        """
+        age_groups = [
+            ('0-4', pattern[0], pattern[1]),
+            ('5-9', pattern[2], pattern[3]),
+            ('10-14', pattern[4], pattern[5]),
+            ('15-17', pattern[6], pattern[7]),
+            ('18-29', pattern[8], pattern[9]),
+            ('30-49', pattern[10], pattern[11]),
+            ('50+', pattern[12], pattern[13])
+        ]
+        
+        description_parts = []
+        for age_group, males, females in age_groups:
+            if males > 0 or females > 0:
+                gender_parts = []
+                if males > 0:
+                    gender_parts.append(f"{males}M")
+                if females > 0:
+                    gender_parts.append(f"{females}F")
+                description_parts.append(f"{age_group}:{'+'.join(gender_parts)}")
+        
+        return ", ".join(description_parts)
+    
+    
+    
     def export_results(self, output_path):
-        """Export results to CSV file"""
+        """Export results to CSV file with specified fields"""
         if self.groups is None:
             print("Please run analysis first")
             return
@@ -228,22 +257,23 @@ class FamilyGroupAnalyzer:
         export_data = []
         for pattern, data in self.groups.items():
             row = {
-                'count': data['count'],
-                'weighted_zu': data['zu'],
-                'weighted_zl': data['zl'],
-                'mean_food_norm': data['mean_food_norm'],
-                'mean_expenses': np.mean(data['expenses']),
-                'min_expenses': min(data['expenses']),
-                'max_expenses': max(data['expenses']),
-                'families': ','.join(map(str, data['families']))
+                'Family Composition': self.get_family_description(pattern),
+                'ZL': data['zl'],
+                'ZU': data['zu'],
+                'Mean Expenditures': np.mean(data['expenses']),
+                'Median Expenditures': np.median(data['expenses']),
+                'Poverty Rate (%)': data['poverty_rate'],
+                'Count': data['count']
             }
-            # Add pattern values
-            for i, value in enumerate(pattern):
-                row[f'pattern_{i}'] = value
             export_data.append(row)
             
-        # Create and save DataFrame
+        # Create DataFrame
         results_df = pd.DataFrame(export_data)
+        
+        # Sort by Count (descending) for better readability
+        results_df = results_df.sort_values('Count', ascending=False)
+        
+        # Export to CSV
         results_df.to_csv(output_path, index=False)
         print(f"\nResults exported to {output_path}")
 
