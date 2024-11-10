@@ -5,17 +5,43 @@ from scipy import stats
 from datetime import datetime
 import os
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from scipy import stats
+from datetime import datetime
+import os
+
 class GroupVisualizer:
     @staticmethod
-    def create_expenditure_plot(groups, num_groups=5, plot_dir=None):
+    def get_family_description(pattern):
         """
-        Create and save visualization including poverty line
+        Generate a human-readable description of the family composition
+        """
+        age_groups = [
+            ('0-4', pattern[0], pattern[1]),
+            ('5-9', pattern[2], pattern[3]),
+            ('10-14', pattern[4], pattern[5]),
+            ('15-17', pattern[6], pattern[7]),
+            ('18-29', pattern[8], pattern[9]),
+            ('30-49', pattern[10], pattern[11]),
+            ('50+', pattern[12], pattern[13])
+        ]
         
-        Args:
-            groups: Dictionary containing group data
-            num_groups: Number of top groups to visualize
-            plot_dir: Optional directory path for saving plots. If None, uses current directory
-        """
+        description_parts = []
+        for age_group, males, females in age_groups:
+            if males > 0 or females > 0:
+                gender_parts = []
+                if males > 0:
+                    gender_parts.append(f"{males}M")
+                if females > 0:
+                    gender_parts.append(f"{females}F")
+                description_parts.append(f"{age_group}:{'+'.join(gender_parts)}")
+        
+        return ", ".join(description_parts)
+
+    @staticmethod
+    def create_expenditure_plot(groups, num_groups=5, plot_dir=None):
         if plot_dir:
             os.makedirs(plot_dir, exist_ok=True)
             save_path = lambda filename: os.path.join(plot_dir, filename)
@@ -31,7 +57,8 @@ class GroupVisualizer:
         # Main distribution plot
         plt.figure(figsize=(15, 10))
         plt.grid(True, alpha=0.3)
-        plt.title('Expenditure Distribution with ZL/ZU Values and Poverty Line', pad=20)
+        plt.title('Expenditure Distribution by Family Composition\nwith ZL/ZU Values and Poverty Line', 
+                 pad=20, wrap=True)
         plt.xlabel('Expenditure Amount')
         plt.ylabel('Density')
         
@@ -40,15 +67,16 @@ class GroupVisualizer:
             avg_zl = data['zl'] / data['count']
             avg_zu = data['zu'] / data['count']
             poverty_line = data['poverty_line']
-            poverty_count = sum(expenses < poverty_line)
-            poverty_rate = (poverty_count / len(expenses)) * 100
+            poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
+            
+            family_desc = GroupVisualizer.get_family_description(pattern)
             
             kernel = stats.gaussian_kde(expenses)
             x_range = np.linspace(min(expenses), max(expenses), 200)
             density = kernel(x_range)
             
             plt.plot(x_range, density, color=colors[idx], 
-                    label=f'Group {idx+1} (n={data["count"]}, {poverty_rate:.1f}% below poverty)')
+                    label=f'{family_desc} (n={data["count"]}, {poverty_rate:.1f}% poor)')
             
             mean_exp = np.mean(expenses)
             plt.axvline(mean_exp, color=colors[idx], linestyle='--', alpha=0.5)
@@ -66,7 +94,7 @@ class GroupVisualizer:
             plt.text(poverty_line, y_pos * 0.9, f'Poverty: {poverty_line:,.0f}', 
                     color=colors[idx], ha='right', va='bottom')
         
-        plt.legend(title='Family Groups', bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.legend(title='Family Types', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.figtext(1.15, 0.5, 
                    'Line Styles:\n' +
                    '--  Mean Expenditure\n' +
@@ -82,14 +110,15 @@ class GroupVisualizer:
         
         # Individual group plots
         for idx, (pattern, data) in enumerate(top_groups):
-            plt.figure(figsize=(10, 6))
+            plt.figure(figsize=(12, 6))
             
             expenses = np.array(data['expenses'])
             avg_zl = data['zl'] / data['count']
             avg_zu = data['zu'] / data['count']
             poverty_line = data['poverty_line']
-            poverty_count = sum(expenses < poverty_line)
-            poverty_rate = (poverty_count / len(expenses)) * 100
+            poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
+            
+            family_desc = GroupVisualizer.get_family_description(pattern)
             
             sns.histplot(expenses, kde=True, color=colors[idx])
             
@@ -99,13 +128,13 @@ class GroupVisualizer:
             plt.axvline(avg_zu, color='green', linestyle='-.', label='ZU')
             plt.axvline(poverty_line, color='purple', linestyle='-', label='Poverty Line')
             
-            plt.title(f'Group {idx+1} Distribution (n={data["count"]}, {poverty_rate:.1f}% below poverty)')
+            plt.title(f'Family Type: {family_desc}\n(n={data["count"]}, {poverty_rate:.1f}% below poverty)',
+                     pad=20, wrap=True)
             plt.xlabel('Expenditure Amount')
             plt.ylabel('Count')
             
-            # Add shading for poverty area
             plt.axvspan(min(expenses), poverty_line, color='red', alpha=0.1, 
-                       label=f'Below Poverty ({poverty_count} families)')
+                       label=f'Below Poverty ({sum(expenses < poverty_line)} families)')
             
             plt.text(mean_exp, plt.ylim()[1], f'Mean: {mean_exp:,.0f}', 
                     rotation=90, va='top')
@@ -118,13 +147,13 @@ class GroupVisualizer:
             
             plt.legend()
             
-            filename = save_path(f'group_{idx+1}_distribution_{timestamp}.png')
+            filename = save_path(f'family_type_{idx+1}_distribution_{timestamp}.png')
             plt.savefig(filename, bbox_inches='tight', dpi=300)
             plt.close()
-            print(f"Saved group {idx+1} plot: {filename}")
+            print(f"Saved family type {idx+1} plot: {filename}")
         
-        # Box plot with poverty lines
-        plt.figure(figsize=(12, 6))
+        # Box plot
+        plt.figure(figsize=(14, 7))
         box_data = []
         labels = []
         poverty_lines = []
@@ -132,19 +161,20 @@ class GroupVisualizer:
         for idx, (pattern, data) in enumerate(top_groups):
             box_data.append(data['expenses'])
             poverty_rate = (sum(data['expenses'] < data['poverty_line']) / len(data['expenses'])) * 100
-            labels.append(f'Group {idx+1}\n(n={data["count"]}\n{poverty_rate:.1f}% poor)')
+            family_desc = GroupVisualizer.get_family_description(pattern)
+            labels.append(f'{family_desc}\n(n={data["count"]}\n{poverty_rate:.1f}% poor)')
             poverty_lines.append(data['poverty_line'])
         
         plt.boxplot(box_data, labels=labels)
         
-        # Add poverty lines to box plot
         for idx, poverty_line in enumerate(poverty_lines):
             plt.hlines(y=poverty_line, xmin=idx+0.7, xmax=idx+1.3, 
                       color='red', linestyle='--', alpha=0.5)
         
-        plt.title('Expenditure Distribution Comparison with Poverty Lines')
+        plt.title('Expenditure Distribution Comparison by Family Type\nwith Poverty Lines')
         plt.ylabel('Expenditure Amount')
         plt.grid(True, axis='y', alpha=0.3)
+        plt.xticks(rotation=45, ha='right')
         
         filename = save_path(f'expenditure_boxplot_{timestamp}.png')
         plt.savefig(filename, bbox_inches='tight', dpi=300)
@@ -152,6 +182,7 @@ class GroupVisualizer:
         print(f"Saved box plot: {filename}")
         
         return plot_dir if plot_dir else "current directory"
+
 
 def add_visualization_to_analyzer(FamilyGroupAnalyzer):
     """Add visualization method to the analyzer class"""
@@ -167,7 +198,7 @@ def add_visualization_to_analyzer(FamilyGroupAnalyzer):
             print("Please run analysis first")
             return
         
-        save_location = GroupVisualizer.create_expenditure_plot(self.groups, plot_dir=plot_dir)
+        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 40,plot_dir=plot_dir)
         print(f"\nAll plots have been saved in: {save_location}")
     
     # Add the method to the class

@@ -31,74 +31,104 @@ class FamilyGroupAnalyzer:
             4202.0822921, 5705.0959602,      # 30-49
             3561.6220116, 4707.0973191       # 50+
         ]
-    
+
     def read_csv(self):
         """Read CSV file with proper encoding for Hebrew characters"""
         try:
             encodings = ['utf-8', 'cp1255', 'iso-8859-8']
             for encoding in encodings:
                 try:
-                    self.df = pd.read_csv(self.csv_path, encoding=encoding)
+                    # Define expected columns
+                    columns = [
+                        "misparmb",
+                        "c3 - סך כל ההוצאות",
+                        "F_norm Active cheapest - סך הוצאה נמוכה למספר הסלים",
+                        "0 -4 min1", "0 -4 min2",
+                        "5 - 9 min1", "5 - 9 min2",
+                        "10-14 min1", "10-14 min2",
+                        "15 - 17 min1", "15 - 17 min2",
+                        "18 -29 min1", "18 -29 min2",
+                        "30 - 49 min1", "30 - 49 min2",
+                        "50+ min1", "50+ min2"
+                    ]
+                    
+                    # Read CSV with specified columns
+                    self.df = pd.read_csv(self.csv_path, encoding=encoding, skiprows=1, names=columns)
                     break
                 except UnicodeDecodeError:
                     continue
                     
             if self.df is None:
                 raise Exception("Could not read file with any of the attempted encodings")
+            
+            # Convert numeric columns (all except misparmb)
+            numeric_columns = [col for col in columns if col != "misparmb"]
+            
+            # Convert string numbers to float, handling potential commas in numbers
+            for col in numeric_columns:
+                self.df[col] = self.df[col].apply(lambda x: float(str(x).replace(',', '')) if pd.notnull(x) else 0)
                 
-            # Clean column names
-            self.df.columns = self.df.columns.str.strip()
+            # Ensure misparmb is string
+            self.df["misparmb"] = self.df["misparmb"].astype(str)
+            
             return True
             
         except Exception as e:
             print(f"Error reading CSV file: {str(e)}")
             return False
-    
+
     def create_group_key(self, row):
         """Create a tuple key from age distribution columns"""
         age_columns = [
-            '0 -4 min1', '0 -4 min2',
-            '5 - 9 min1', '5 - 9 min2',
-            '10-14 min1', '10-14 min2',
-            '15 - 17 min1', '15 - 17 min2',
-            '18 -29 min1', '18 -29 min2',
-            '30 - 49 min1', '30 - 49 min2',
-            '50+ min1', '50+ min2'
+            "0 -4 min1", "0 -4 min2",
+            "5 - 9 min1", "5 - 9 min2",
+            "10-14 min1", "10-14 min2",
+            "15 - 17 min1", "15 - 17 min2",
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
+            "50+ min1", "50+ min2"
         ]
         return tuple(row[col] for col in age_columns)
-    
+
     def calculate_weighted_zl(self, row):
-        """Calculate ZL using weighted sum"""
+        """Calculate ZL using weighted sum and food norm"""
         age_columns = [
-            '0 -4 min1', '0 -4 min2',
-            '5 - 9 min1', '5 - 9 min2',
-            '10-14 min1', '10-14 min2',
-            '15 - 17 min1', '15 - 17 min2',
-            '18 -29 min1', '18 -29 min2',
-            '30 - 49 min1', '30 - 49 min2',
-            '50+ min1', '50+ min2'
+            "0 -4 min1", "0 -4 min2",
+            "5 - 9 min1", "5 - 9 min2",
+            "10-14 min1", "10-14 min2",
+            "15 - 17 min1", "15 - 17 min2",
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
+            "50+ min1", "50+ min2"
         ]
         
+        # Calculate c30_c31
         values = [row[col] for col in age_columns]
-        # Calculate weighted sum using ZL weights (skipping the base weight)
-        return sum(v * w for v, w in zip(values, self.zl_weights[1:])) + self.zl_weights[0]
-    
+        c30_c31 = sum(v * w for v, w in zip(values, self.zl_weights[1:])) + self.zl_weights[0]
+        
+        # Get food norm
+        food_norm = row["F_norm Active cheapest - סך הוצאה נמוכה למספר הסלים"]
+        
+        # Calculate new ZL using the formula: food_norm + (food_norm - c30_c31)
+        new_zl = food_norm + (food_norm - c30_c31)
+        
+        return new_zl
+
     def calculate_weighted_zu(self, row):
         """Calculate ZU using weighted sum"""
         age_columns = [
-            '0 -4 min1', '0 -4 min2',
-            '5 - 9 min1', '5 - 9 min2',
-            '10-14 min1', '10-14 min2',
-            '15 - 17 min1', '15 - 17 min2',
-            '18 -29 min1', '18 -29 min2',
-            '30 - 49 min1', '30 - 49 min2',
-            '50+ min1', '50+ min2'
+            "0 -4 min1", "0 -4 min2",
+            "5 - 9 min1", "5 - 9 min2",
+            "10-14 min1", "10-14 min2",
+            "15 - 17 min1", "15 - 17 min2",
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
+            "50+ min1", "50+ min2"
         ]
         
         values = [row[col] for col in age_columns]
-        # Calculate weighted sum using ZU weights (skipping the base weight)
         return sum(v * w for v, w in zip(values, self.zu_weights[1:])) + self.zu_weights[0]
-    
+
     def analyze_groups(self):
         """Group families and calculate statistics including poverty line"""
         if self.df is None:
@@ -111,9 +141,10 @@ class FamilyGroupAnalyzer:
             'expenses': [],
             'zu': 0,
             'zl': 0,
+            'food_norms': [],
             'families': [],
-            'poverty_line': 0,  # New field for poverty line
-            'below_poverty': 0  # New field for count of families below poverty line
+            'poverty_line': 0,
+            'below_poverty': 0
         })
         
         # First pass: collect expenses and basic stats
@@ -122,8 +153,11 @@ class FamilyGroupAnalyzer:
             
             # Update group statistics
             groups[group_key]['count'] += 1
-            groups[group_key]['expenses'].append(row['c3 - סך כל ההוצאות'])
-            groups[group_key]['families'].append(row['misparmb'])
+            groups[group_key]['expenses'].append(row["c3 - סך כל ההוצאות"])
+            groups[group_key]['families'].append(row["misparmb"])
+            groups[group_key]['food_norms'].append(
+                row["F_norm Active cheapest - סך הוצאה נמוכה למספר הסלים"]
+            )
             
             # Calculate and add weighted ZU/ZL values
             groups[group_key]['zu'] += self.calculate_weighted_zu(row)
@@ -148,10 +182,13 @@ class FamilyGroupAnalyzer:
                 ((data['poverty_line'] - exp) / data['poverty_line']) ** 2 
                 for exp in expenses if exp < data['poverty_line']
             ]) if data['below_poverty'] > 0 else 0
-        
+            
+            # Add food norm statistics
+            data['mean_food_norm'] = np.mean(data['food_norms'])
+            
         self.groups = groups
         return groups
-    
+
     def print_results(self):
         """Print analysis results including poverty statistics"""
         if self.groups is None:
@@ -168,6 +205,7 @@ class FamilyGroupAnalyzer:
             print(f"Count: {data['count']} families")
             print(f"Weighted ZU: {data['zu']:.2f}")
             print(f"Weighted ZL: {data['zl']:.2f}")
+            print(f"Mean Food Norm: {data['mean_food_norm']:.2f}")
             print("\nExpenditure Statistics:")
             print(f"  Mean: {np.mean(data['expenses']):.2f}")
             print(f"  Median: {np.median(data['expenses']):.2f}")
@@ -179,8 +217,7 @@ class FamilyGroupAnalyzer:
             print(f"  Poverty Gap: {data['poverty_gap']:.3f}")
             print(f"  Poverty Severity: {data['poverty_severity']:.3f}")
             print("-" * 60)
-    
-    
+
     def export_results(self, output_path):
         """Export results to CSV file"""
         if self.groups is None:
@@ -194,6 +231,7 @@ class FamilyGroupAnalyzer:
                 'count': data['count'],
                 'weighted_zu': data['zu'],
                 'weighted_zl': data['zl'],
+                'mean_food_norm': data['mean_food_norm'],
                 'mean_expenses': np.mean(data['expenses']),
                 'min_expenses': min(data['expenses']),
                 'max_expenses': max(data['expenses']),
@@ -208,12 +246,10 @@ class FamilyGroupAnalyzer:
         results_df = pd.DataFrame(export_data)
         results_df.to_csv(output_path, index=False)
         print(f"\nResults exported to {output_path}")
-        
-
 
 def main():
     # File paths
-    input_file = "food_economics_2024 - all_families.csv"  # Replace with your actual file path
+    input_file = "food_economics_2024 - all_families.csv"
     output_file = "family_groups_analysis_weighted.csv"
     
     # Initialize analyzer
