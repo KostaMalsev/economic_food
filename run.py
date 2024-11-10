@@ -185,46 +185,7 @@ class FamilyGroupAnalyzer:
         self.groups = groups
         return groups
 
-    def print_results(self):
-        """Print analysis results including poverty statistics"""
-        if self.groups is None:
-            print("Please run analysis first")
-            return
-            
-        print("\nFamily Group Analysis Results (including Poverty Analysis)")
-        print("-" * 80)
-        
-        sorted_groups = sorted(self.groups.items(), key=lambda x: x[1]['count'], reverse=True)
-        
-        total_families = sum(data['count'] for _, data in sorted_groups)
-        
-        for i, (pattern, data) in enumerate(sorted_groups, 1):
-            print(f"\nGroup {i}:")
-            print(f"Family Composition: {self.get_family_description(pattern)}")
-            print(f"Count: {data['count']} families ({(data['count']/total_families*100):.1f}% of total)")
-            print(f"ZU: {data['zu']:.2f}")  
-            print(f"ZL: {data['zl']:.2f}")  
-            print(f"Mean Food Norm: {data['food_norm']:.2f}")
-            
-            print("\nExpenditure Statistics:")
-            print(f"  Mean: {np.mean(data['expenses']):.2f}")
-            print(f"  Median: {np.median(data['expenses']):.2f}")
-            print(f"  Min: {min(data['expenses']):.2f}")
-            print(f"  Max: {max(data['expenses']):.2f}")
-            
-            print("\nPoverty Analysis:")
-            print(f"  Poverty Line: {data['poverty_line']:.2f}")
-            print(f"  Families Below Poverty: {data['below_poverty']} ({data['poverty_rate']:.1f}%)")
-            print(f"  Poverty Gap: {data['poverty_gap']:.3f}")
-            print(f"  Poverty Severity: {data['poverty_severity']:.3f}")
-            print("-" * 60)
-            
-        # Print summary statistics
-        print("\nSummary Statistics:")
-        print(f"Total number of families: {total_families}")
-        print(f"Number of unique family compositions: {len(sorted_groups)}")
-        print("-" * 80)
-
+    
     
     def get_family_description(self, pattern):
         """
@@ -301,9 +262,6 @@ def main():
         
         # Perform analysis
         analyzer.analyze_groups()
-        
-        # Print results
-        analyzer.print_results()
         
         # Create and save plots
         analyzer.plot_and_save_groups()

@@ -198,7 +198,7 @@ def add_visualization_to_analyzer(FamilyGroupAnalyzer):
             print("Please run analysis first")
             return
         
-        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 2,plot_dir=plot_dir)
+        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 50,plot_dir=plot_dir)
         print(f"\nAll plots have been saved in: {save_location}")
     
     # Add the method to the class
