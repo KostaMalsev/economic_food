@@ -64,8 +64,8 @@ class GroupVisualizer:
         
         for idx, (pattern, data) in enumerate(top_groups):
             expenses = np.array(data['expenses'])
-            avg_zl = data['zl'] / data['count']
-            avg_zu = data['zu'] / data['count']
+            avg_zl = data['zl'] 
+            avg_zu = data['zu'] 
             poverty_line = data['poverty_line']
             poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
             
@@ -113,8 +113,8 @@ class GroupVisualizer:
             plt.figure(figsize=(12, 6))
             
             expenses = np.array(data['expenses'])
-            avg_zl = data['zl'] / data['count']
-            avg_zu = data['zu'] / data['count']
+            avg_zl = data['zl']
+            avg_zu = data['zu']
             poverty_line = data['poverty_line']
             poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
             
@@ -198,7 +198,7 @@ def add_visualization_to_analyzer(FamilyGroupAnalyzer):
             print("Please run analysis first")
             return
         
-        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 40,plot_dir=plot_dir)
+        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 2,plot_dir=plot_dir)
         print(f"\nAll plots have been saved in: {save_location}")
     
     # Add the method to the class

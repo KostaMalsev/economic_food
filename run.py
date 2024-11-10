@@ -141,7 +141,7 @@ class FamilyGroupAnalyzer:
             'expenses': [],
             'zu': 0,
             'zl': 0,
-            'food_norms': [],
+            'food_norm': 0,
             'families': [],
             'poverty_line': 0,
             'below_poverty': 0
@@ -155,13 +155,11 @@ class FamilyGroupAnalyzer:
             groups[group_key]['count'] += 1
             groups[group_key]['expenses'].append(row["c3 - סך כל ההוצאות"])
             groups[group_key]['families'].append(row["misparmb"])
-            groups[group_key]['food_norms'].append(
-                row["F_norm Active cheapest - סך הוצאה נמוכה למספר הסלים"]
-            )
+            groups[group_key]['food_norm'] = row["F_norm Active cheapest - סך הוצאה נמוכה למספר הסלים"]
             
             # Calculate and add weighted ZU/ZL values
-            groups[group_key]['zu'] += self.calculate_weighted_zu(row)
-            groups[group_key]['zl'] += self.calculate_weighted_zl(row)
+            groups[group_key]['zu'] = self.calculate_weighted_zu(row)
+            groups[group_key]['zl'] = self.calculate_weighted_zl(row)
         
         # Second pass: calculate poverty lines and related statistics
         for group_key, data in groups.items():
@@ -183,8 +181,6 @@ class FamilyGroupAnalyzer:
                 for exp in expenses if exp < data['poverty_line']
             ]) if data['below_poverty'] > 0 else 0
             
-            # Add food norm statistics
-            data['mean_food_norm'] = np.mean(data['food_norms'])
             
         self.groups = groups
         return groups
@@ -200,23 +196,34 @@ class FamilyGroupAnalyzer:
         
         sorted_groups = sorted(self.groups.items(), key=lambda x: x[1]['count'], reverse=True)
         
+        total_families = sum(data['count'] for _, data in sorted_groups)
+        
         for i, (pattern, data) in enumerate(sorted_groups, 1):
             print(f"\nGroup {i}:")
-            print(f"Count: {data['count']} families")
-            print(f"Weighted ZU: {data['zu']:.2f}")
-            print(f"Weighted ZL: {data['zl']:.2f}")
-            print(f"Mean Food Norm: {data['mean_food_norm']:.2f}")
+            print(f"Family Composition: {self.get_family_description(pattern)}")
+            print(f"Count: {data['count']} families ({(data['count']/total_families*100):.1f}% of total)")
+            print(f"ZU: {data['zu']:.2f}")  
+            print(f"ZL: {data['zl']:.2f}")  
+            print(f"Mean Food Norm: {data['food_norm']:.2f}")
+            
             print("\nExpenditure Statistics:")
             print(f"  Mean: {np.mean(data['expenses']):.2f}")
             print(f"  Median: {np.median(data['expenses']):.2f}")
             print(f"  Min: {min(data['expenses']):.2f}")
             print(f"  Max: {max(data['expenses']):.2f}")
+            
             print("\nPoverty Analysis:")
             print(f"  Poverty Line: {data['poverty_line']:.2f}")
             print(f"  Families Below Poverty: {data['below_poverty']} ({data['poverty_rate']:.1f}%)")
             print(f"  Poverty Gap: {data['poverty_gap']:.3f}")
             print(f"  Poverty Severity: {data['poverty_severity']:.3f}")
             print("-" * 60)
+            
+        # Print summary statistics
+        print("\nSummary Statistics:")
+        print(f"Total number of families: {total_families}")
+        print(f"Number of unique family compositions: {len(sorted_groups)}")
+        print("-" * 80)
 
     
     def get_family_description(self, pattern):
