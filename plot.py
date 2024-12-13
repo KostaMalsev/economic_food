@@ -2,204 +2,203 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from scipy import stats
-from datetime import datetime
 import os
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from scipy import stats
 from datetime import datetime
-import os
+import pandas as pd
 
 class GroupVisualizer:
-    @staticmethod
-    def get_family_description(pattern):
-        """
-        Generate a human-readable description of the family composition
-        """
-        age_groups = [
-            ('0-4', pattern[0], pattern[1]),
-            ('5-9', pattern[2], pattern[3]),
-            ('10-14', pattern[4], pattern[5]),
-            ('15-17', pattern[6], pattern[7]),
-            ('18-29', pattern[8], pattern[9]),
-            ('30-49', pattern[10], pattern[11]),
-            ('50+', pattern[12], pattern[13])
-        ]
+    def __init__(self, save_dir='./graphs/'):
+        self.save_dir = save_dir
+        os.makedirs(save_dir, exist_ok=True)
+        self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
-        description_parts = []
-        for age_group, males, females in age_groups:
-            if males > 0 or females > 0:
-                gender_parts = []
-                if males > 0:
-                    gender_parts.append(f"{males}M")
-                if females > 0:
-                    gender_parts.append(f"{females}F")
-                description_parts.append(f"{age_group}:{'+'.join(gender_parts)}")
-        
-        return ", ".join(description_parts)
+    def save_plot(self, filename):
+        """Save plot with timestamp"""
+        full_path = os.path.join(self.save_dir, f"{filename}_{self.timestamp}.png")
+        plt.savefig(full_path, bbox_inches='tight', dpi=300)
+        plt.close()
+        print(f"Saved plot: {full_path}")
 
-    @staticmethod
-    def create_expenditure_plot(groups, num_groups=5, plot_dir=None):
-        if plot_dir:
-            os.makedirs(plot_dir, exist_ok=True)
-            save_path = lambda filename: os.path.join(plot_dir, filename)
-        else:
-            save_path = lambda filename: filename
-            
-        sorted_groups = sorted(groups.items(), key=lambda x: x[1]['count'], reverse=True)
-        top_groups = sorted_groups[:num_groups]
+    def create_scatter_plot(self, df, x, y, title, overlays=None):
+        """Create scatter plot with optional overlays"""
+        plt.figure(figsize=(12, 8))
         
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        colors = sns.color_palette("husl", num_groups)
+        # Main scatter plot
+        plt.scatter(df[x], df[y], alpha=0.5, label=f'Base')
         
-        # Main distribution plot
-        plt.figure(figsize=(15, 10))
+        if overlays:
+            colors = plt.cm.Set2(np.linspace(0, 1, len(overlays)))
+            for overlay, color in zip(overlays, colors):
+                if isinstance(overlay, tuple):  # Tuple indicates function overlay (e.g., y = 3x)
+                    x_vals = df[x]
+                    y_vals = overlay[1](x_vals)
+                    plt.plot(x_vals, y_vals, color=color, label=overlay[0], linestyle='--')
+                else:
+                    plt.scatter(df[x], df[overlay], 
+                              alpha=0.3, 
+                              color=color,
+                              label=f'{overlay}')
+        
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.title(title)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.grid(True, alpha=0.3)
-        plt.title('Expenditure Distribution by Family Composition\nwith ZL/ZU Values and Poverty Line', 
-                 pad=20, wrap=True)
-        plt.xlabel('Expenditure Amount')
-        plt.ylabel('Density')
+        plt.tight_layout()
         
-        for idx, (pattern, data) in enumerate(top_groups):
-            expenses = np.array(data['expenses'])
-            avg_zl = data['zl'] 
-            avg_zu = data['zu'] 
-            poverty_line = data['poverty_line']
-            poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
-            
-            family_desc = GroupVisualizer.get_family_description(pattern)
-            
-            kernel = stats.gaussian_kde(expenses)
-            x_range = np.linspace(min(expenses), max(expenses), 200)
-            density = kernel(x_range)
-            
-            plt.plot(x_range, density, color=colors[idx], 
-                    label=f'{family_desc} (n={data["count"]}, {poverty_rate:.1f}% poor)')
-            
-            mean_exp = np.mean(expenses)
-            plt.axvline(mean_exp, color=colors[idx], linestyle='--', alpha=0.5)
-            plt.axvline(avg_zl, color=colors[idx], linestyle=':', alpha=0.7)
-            plt.axvline(avg_zu, color=colors[idx], linestyle='-.', alpha=0.7)
-            plt.axvline(poverty_line, color=colors[idx], linestyle='-', alpha=0.3)
-            
-            y_pos = max(density) * (0.8 - idx * 0.15)
-            plt.text(mean_exp, y_pos, f'Mean: {mean_exp:,.0f}', 
-                    color=colors[idx], ha='right', va='bottom')
-            plt.text(avg_zl, y_pos, f'ZL: {avg_zl:,.0f}', 
-                    color=colors[idx], ha='right', va='top')
-            plt.text(avg_zu, y_pos, f'ZU: {avg_zu:,.0f}', 
-                    color=colors[idx], ha='left', va='top')
-            plt.text(poverty_line, y_pos * 0.9, f'Poverty: {poverty_line:,.0f}', 
-                    color=colors[idx], ha='right', va='bottom')
-        
-        plt.legend(title='Family Types', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.figtext(1.15, 0.5, 
-                   'Line Styles:\n' +
-                   '--  Mean Expenditure\n' +
-                   ':   ZL (Lower Bound)\n' +
-                   '-.  ZU (Upper Bound)\n' +
-                   '-   Poverty Line',
-                   bbox=dict(facecolor='white', alpha=0.8))
-        
-        filename = save_path(f'expenditure_distribution_{timestamp}.png')
-        plt.savefig(filename, bbox_inches='tight', dpi=300)
-        plt.close()
-        print(f"Saved expenditure distribution plot: {filename}")
-        
-        # Individual group plots
-        for idx, (pattern, data) in enumerate(top_groups):
-            plt.figure(figsize=(12, 6))
-            
-            expenses = np.array(data['expenses'])
-            avg_zl = data['zl']
-            avg_zu = data['zu']
-            poverty_line = data['poverty_line']
-            poverty_rate = (sum(expenses < poverty_line) / len(expenses)) * 100
-            
-            family_desc = GroupVisualizer.get_family_description(pattern)
-            
-            sns.histplot(expenses, kde=True, color=colors[idx])
-            
-            mean_exp = np.mean(expenses)
-            plt.axvline(mean_exp, color='black', linestyle='--', label='Mean')
-            plt.axvline(avg_zl, color='red', linestyle=':', label='ZL')
-            plt.axvline(avg_zu, color='green', linestyle='-.', label='ZU')
-            plt.axvline(poverty_line, color='purple', linestyle='-', label='Poverty Line')
-            
-            plt.title(f'Family Type: {family_desc}\n(n={data["count"]}, {poverty_rate:.1f}% below poverty)',
-                     pad=20, wrap=True)
-            plt.xlabel('Expenditure Amount')
-            plt.ylabel('Count')
-            
-            plt.axvspan(min(expenses), poverty_line, color='red', alpha=0.1, 
-                       label=f'Below Poverty ({sum(expenses < poverty_line)} families)')
-            
-            plt.text(mean_exp, plt.ylim()[1], f'Mean: {mean_exp:,.0f}', 
-                    rotation=90, va='top')
-            plt.text(avg_zl, plt.ylim()[1], f'ZL: {avg_zl:,.0f}', 
-                    rotation=90, va='top', color='red')
-            plt.text(avg_zu, plt.ylim()[1], f'ZU: {avg_zu:,.0f}', 
-                    rotation=90, va='top', color='green')
-            plt.text(poverty_line, plt.ylim()[1], f'Poverty: {poverty_line:,.0f}', 
-                    rotation=90, va='top', color='purple')
-            
-            plt.legend()
-            
-            filename = save_path(f'family_type_{idx+1}_distribution_{timestamp}.png')
-            plt.savefig(filename, bbox_inches='tight', dpi=300)
-            plt.close()
-            print(f"Saved family type {idx+1} plot: {filename}")
-        
-        # Box plot
-        plt.figure(figsize=(14, 7))
-        box_data = []
-        labels = []
-        poverty_lines = []
-        
-        for idx, (pattern, data) in enumerate(top_groups):
-            box_data.append(data['expenses'])
-            poverty_rate = (sum(data['expenses'] < data['poverty_line']) / len(data['expenses'])) * 100
-            family_desc = GroupVisualizer.get_family_description(pattern)
-            labels.append(f'{family_desc}\n(n={data["count"]}\n{poverty_rate:.1f}% poor)')
-            poverty_lines.append(data['poverty_line'])
-        
-        plt.boxplot(box_data, labels=labels)
-        
-        for idx, poverty_line in enumerate(poverty_lines):
-            plt.hlines(y=poverty_line, xmin=idx+0.7, xmax=idx+1.3, 
-                      color='red', linestyle='--', alpha=0.5)
-        
-        plt.title('Expenditure Distribution Comparison by Family Type\nwith Poverty Lines')
-        plt.ylabel('Expenditure Amount')
-        plt.grid(True, axis='y', alpha=0.3)
-        plt.xticks(rotation=45, ha='right')
-        
-        filename = save_path(f'expenditure_boxplot_{timestamp}.png')
-        plt.savefig(filename, bbox_inches='tight', dpi=300)
-        plt.close()
-        print(f"Saved box plot: {filename}")
-        
-        return plot_dir if plot_dir else "current directory"
+        return plt
 
+    def create_household_graphs(self, df, is_sedentary=False):
+        """Create graphs for household analysis"""
+        pop_type = "Sedentary" if is_sedentary else "Active"
+        foodnorm_col = "FoodNorm-sendetary" if is_sedentary else "FoodNorm-active"
+        filtered_df = df
+        
+        # 1. Total Expenditure vs Food Expenditure
+        self.create_scatter_plot(
+            filtered_df,
+            'c3',
+            'food_actual',
+            f'Total Expenditure vs Food Expenditure ({pop_type} Households)'
+        )
+        self.save_plot(f'1_expenditure_food_{pop_type.lower()}')
+        
+        # 2. Total Expenditure vs Non-Food Expenditure
+        filtered_df['non_food'] = filtered_df['c3'] - filtered_df['food_actual']
+        self.create_scatter_plot(
+            filtered_df,
+            'c3',
+            'non_food',
+            f'Total Expenditure vs Non-Food Expenditure ({pop_type} Households)'
+        )
+        self.save_plot(f'2_expenditure_nonfood_{pop_type.lower()}')
+        
+        # 3. Actual vs Estimated Expenditure
+        zu = "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active"
+        filtered_df['c3_diff'] = filtered_df[zu] - filtered_df['c3']
+        self.create_scatter_plot(
+            filtered_df,
+            'c3',
+            zu,
+            f'Actual vs Estimated Expenditure ({pop_type} Households)',
+            overlays=['c3_diff']
+        )
+        self.save_plot(f'3_actual_estimated_{pop_type.lower()}')
+        
+        # 4. Food Expenditure vs Food Norm
+        filtered_df['food_norm_diff'] = filtered_df[foodnorm_col] - filtered_df['food_actual']
+        self.create_scatter_plot(
+            filtered_df,
+            'food_actual',
+            'food_actual',
+            f'Food Expenditure vs Food Norm ({pop_type} Households)',
+            overlays=[
+                foodnorm_col,
+                'food_norm_diff'
+            ]
+        )
+        self.save_plot(f'4_food_norm_{pop_type.lower()}')
+        
+        # 6. ZL vs ZU
+        #        pop_type = "Sedentary" if is_sedentary else "Active"
+        self.create_scatter_plot(
+            filtered_df,
+            "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
+            "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active",
+            f'ZL vs ZU ({pop_type} Households)'
+        )
+        self.save_plot(f'6_zl_zu_{pop_type.lower()}')
+        
+        # 7. ZL vs Food Norm with 3x overlay
+        self.create_scatter_plot(
+            filtered_df,
+            "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
+            foodnorm_col,
+            f'ZL vs Food Norm ({pop_type} Households)',
+            overlays=[('3x Line', lambda x: 3*x)]
+        )
+        self.save_plot(f'7_zl_foodnorm_{pop_type.lower()}')
+        
+        # 8. Food Actual - Food Norm
+        filtered_df['food_diff'] = filtered_df['food_actual'] - filtered_df[foodnorm_col]
+        self.create_scatter_plot(
+            filtered_df,
+            'c3',
+            'food_diff',
+            f'FoodActual - FoodNorm ({pop_type} Households)'
+        )
+        self.save_plot(f'8_food_diff_{pop_type.lower()}')
 
+    def create_person_graphs(self, df, is_sedentary=False):
+        """Create per-person graphs"""
+        pop_type = "Sedentary" if is_sedentary else "Active"
+        foodnorm_col = "FoodNorm-sendetary" if is_sedentary else "FoodNorm-active"
+        filtered_df = df
+        
+        # Calculate per-person metrics
+        metrics = {
+            'c3': 'c3',
+            'food_actual': "food_actual",
+            'food_norm': foodnorm_col,
+            'ZL': "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
+            'ZU': "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active",
+            'non_food_per_person' : 'non_food',
+        }
+        
+        for metric_name, col in metrics.items():
+            filtered_df[f'{metric_name}_per_person'] = filtered_df[col] / filtered_df['persons_count']
+        
+        # Create per-person versions of all graphs
+        # 1. Total Expenditure vs Food Expenditure per person
+        self.create_scatter_plot(
+            filtered_df,
+            'c3_per_person',
+            'food_actual_per_person',
+            f'Total Expenditure vs Food Expenditure per Person ({pop_type})'
+        )
+        self.save_plot(f'1p_expenditure_food_{pop_type.lower()}')
+        
+        # 2. Total Expenditure vs Food Expenditure per person
+        self.create_scatter_plot(
+            filtered_df,
+            'c3_per_person',
+            'non_food_per_person_per_person',
+            f'Total Expenditure vs Non-Food Expenditure per Person ({pop_type})'
+        )
+        self.save_plot(f'2p_expenditure_nonfood_{pop_type.lower()}')
+        
+        # Continue with all other per-person graphs...@@TBD
+        # [Add similar code blocks for graphs 2-8 with _per_person metrics]
+        
+        
+        
+        
 def add_visualization_to_analyzer(FamilyGroupAnalyzer):
-    """Add visualization method to the analyzer class"""
+    """Add visualization methods to the analyzer class"""
     def plot_and_save_groups(self, plot_dir=None):
-        """
-        Create and save plots for group analysis
-        
-        Args:
-            plot_dir: Optional directory path for saving plots. 
-                     If None, saves in current directory.
-        """
-        if self.groups is None:
+        """Create and save all visualization plots"""
+        if self.df is None:
             print("Please run analysis first")
             return
+            
+        plot_dir = plot_dir or './graphs/'
+        visualizer = GroupVisualizer(plot_dir)
         
-        save_location = GroupVisualizer.create_expenditure_plot(self.groups, 50,plot_dir=plot_dir)
-        print(f"\nAll plots have been saved in: {save_location}")
+        # Create household-level graphs
+        print("\nGenerating active household graphs...")
+        visualizer.create_household_graphs(self.df, is_sedentary=False)
+        
+        print("\nGenerating sedentary household graphs...")
+        visualizer.create_household_graphs(self.df, is_sedentary=True)
+        
+        # Create per-person graphs
+        print("\nGenerating active per-person graphs...")
+        visualizer.create_person_graphs(self.df, is_sedentary=False)
+        
+        print("\nGenerating sedentary per-person graphs...")
+        visualizer.create_person_graphs(self.df, is_sedentary=True)
+        
+        print(f"\nAll plots have been saved in: {plot_dir}")
     
-    # Add the method to the class
+    # Add the method to the analyzer class
     FamilyGroupAnalyzer.plot_and_save_groups = plot_and_save_groups
