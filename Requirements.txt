@@ -1,3 +1,41 @@
+ Updated requirements:
+ 
+ 1. Create a graph with:
+   - X-axis: c3
+   - Y-axis: Food Actual and Food Norm separately
+   - Plot their difference
+
+2. Create a graph with:
+X-axis: c3
+Y-axis: c3 and c^3
+Plot their difference
+
+3. Create a graph with:
+X-axis: Food Actual
+Y-axis: Food Actual and Food Norm
+Plot their difference
+
+4. Repeat all above graphs with per capita metrics for:
+Sedentary lifestyle
+Active lifestyle
+
+5. Create a graph showing:
+ZU as a function of ZL and Food Norm (checking if 3x relationship exists)
+
+6. Create a household distribution graph:
+X-axis: Food Actual - Food Norm
+This normalizes household food deprivation
+Orders households from most deprived (most negative, "poorest") to least deprived (most positive, "richest")
+Zero point indicates Food Actual = Food Norm (Ravallion's upper poverty line ZU)
+Households below zero are considered poor
+
+
+
+
+
+
+
+
 
 Requirements:
 ------------
@@ -32,6 +70,8 @@ Glossary:
 
 
 9. Perform regression which identifies which family types are below the FoodNorm
+??
+
 
 Availible data-parameters:
 --------------------------

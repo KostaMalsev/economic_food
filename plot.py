@@ -1,16 +1,20 @@
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from scipy import stats
 import os
 from datetime import datetime
-import pandas as pd
 
 class GroupVisualizer:
     def __init__(self, save_dir='./graphs/'):
         self.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Set consistent style for all plots
+        plt.style.use('default')
+        plt.rcParams['axes.grid'] = True
+        plt.rcParams['grid.alpha'] = 0.3
+        plt.rcParams['figure.figsize'] = [12, 8]
+        self.colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3']  # Colorblind-friendly palette
         
     def save_plot(self, filename):
         """Save plot with timestamp"""
@@ -19,160 +23,168 @@ class GroupVisualizer:
         plt.close()
         print(f"Saved plot: {full_path}")
 
-    def create_scatter_plot(self, df, x, y, title, overlays=None):
-        """Create scatter plot with optional overlays"""
-        plt.figure(figsize=(12, 8))
+    def create_food_vs_expenses_plot(self, df, lifestyle, per_capita=False):
+        """Plot 1: FoodActualX (c3) vs FoodActualY and FoodNorm"""
+        suffix = '_per_capita' if per_capita else ''
+        pop_type = 'Per Capita' if per_capita else 'Household'
         
-        # Main scatter plot
-        plt.scatter(df[x], df[y], alpha=0.5, label=f'Base')
+        plt.figure()
         
-        if overlays:
-            colors = plt.cm.Set2(np.linspace(0, 1, len(overlays)))
-            for overlay, color in zip(overlays, colors):
-                if isinstance(overlay, tuple):  # Tuple indicates function overlay (e.g., y = 3x)
-                    x_vals = df[x]
-                    y_vals = overlay[1](x_vals)
-                    plt.plot(x_vals, y_vals, color=color, label=overlay[0], linestyle='--')
-                else:
-                    plt.scatter(df[x], df[overlay], 
-                              alpha=0.3, 
-                              color=color,
-                              label=f'{overlay}')
+        # Define columns according to glossary
+        x_col = f'c3{suffix}'  # FoodActualX
+        y_col = f'food_actual'#-{lifestyle}{suffix}'  # FoodActualY
+        norm_col = f'FoodNorm-{lifestyle}{suffix}'
         
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.title(title)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
+        # Plot metrics
+        plt.scatter(df[x_col], df[y_col], alpha=0.5, color=self.colors[0], 
+                   label='FoodActualY')
+        plt.scatter(df[x_col], df[norm_col], alpha=0.5, color=self.colors[1], 
+                   label='FoodNorm')
+        
+        # Plot difference
+        diff = df[y_col] - df[norm_col]
+        plt.scatter(df[x_col], diff, alpha=0.5, color=self.colors[2], 
+                   label='Difference')
+        
+        plt.xlabel('FoodActualX (Total Expenses c3)')
+        plt.ylabel('Value')
+        plt.title(f'Food Expenditure vs Total Expenses - {lifestyle.capitalize()} {pop_type}')
+        plt.legend()
         
         return plt
 
-    def create_household_graphs(self, df, is_sedentary=False):
-        """Create graphs for household analysis"""
-        pop_type = "Sedentary" if is_sedentary else "Active"
-        foodnorm_col = "FoodNorm-sendetary" if is_sedentary else "FoodNorm-active"
-        filtered_df = df
+    def create_c3_zu_plot(self, df, lifestyle, per_capita=False):
+        """Plot 2: c3 vs ZU (c^3) comparison"""
+        suffix = '_per_capita' if per_capita else ''
+        pop_type = 'Per Capita' if per_capita else 'Household'
         
-        # 1. Total Expenditure vs Food Expenditure
-        self.create_scatter_plot(
-            filtered_df,
-            'c3',
-            'food_actual',
-            f'Total Expenditure vs Food Expenditure ({pop_type} Households)'
-        )
-        self.save_plot(f'1_expenditure_food_{pop_type.lower()}')
+        plt.figure()
         
-        # 2. Total Expenditure vs Non-Food Expenditure
-        filtered_df['non_food'] = filtered_df['c3'] - filtered_df['food_actual']
-        self.create_scatter_plot(
-            filtered_df,
-            'c3',
-            'non_food',
-            f'Total Expenditure vs Non-Food Expenditure ({pop_type} Households)'
-        )
-        self.save_plot(f'2_expenditure_nonfood_{pop_type.lower()}')
+        x_col = f'c3{suffix}'
+        zu_col = f'ZU-{lifestyle}{suffix}'
         
-        # 3. Actual vs Estimated Expenditure
-        zu = "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active"
-        filtered_df['c3_diff'] = filtered_df[zu] - filtered_df['c3']
-        self.create_scatter_plot(
-            filtered_df,
-            'c3',
-            zu,
-            f'Actual vs Estimated Expenditure ({pop_type} Households)',
-            overlays=['c3_diff']
-        )
-        self.save_plot(f'3_actual_estimated_{pop_type.lower()}')
+        # Plot c3 vs ZU (c^3)
+        plt.scatter(df[x_col], df[x_col], alpha=0.5, color=self.colors[0], 
+                   label='c3')
+        plt.scatter(df[x_col], df[zu_col], alpha=0.5, color=self.colors[1], 
+                   label=f'ZU {lifestyle} (c^3)')
         
-        # 4. Food Expenditure vs Food Norm
-        filtered_df['food_norm_diff'] = filtered_df[foodnorm_col] - filtered_df['food_actual']
-        self.create_scatter_plot(
-            filtered_df,
-            'food_actual',
-            'food_actual',
-            f'Food Expenditure vs Food Norm ({pop_type} Households)',
-            overlays=[
-                foodnorm_col,
-                'food_norm_diff'
-            ]
-        )
-        self.save_plot(f'4_food_norm_{pop_type.lower()}')
+        # Plot difference
+        diff = df[zu_col] - df[x_col]
+        plt.scatter(df[x_col], diff, alpha=0.5, color=self.colors[2], 
+                   label='Difference')
         
-        # 6. ZL vs ZU
-        #        pop_type = "Sedentary" if is_sedentary else "Active"
-        self.create_scatter_plot(
-            filtered_df,
-            "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
-            "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active",
-            f'ZL vs ZU ({pop_type} Households)'
-        )
-        self.save_plot(f'6_zl_zu_{pop_type.lower()}')
+        plt.xlabel('Total Expenses (c3)')
+        plt.ylabel('Value')
+        plt.title(f'c3 vs ZU Comparison - {lifestyle.capitalize()} {pop_type}')
+        plt.legend()
         
-        # 7. ZL vs Food Norm with 3x overlay
-        self.create_scatter_plot(
-            filtered_df,
-            "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
-            foodnorm_col,
-            f'ZL vs Food Norm ({pop_type} Households)',
-            overlays=[('3x Line', lambda x: 3*x)]
-        )
-        self.save_plot(f'7_zl_foodnorm_{pop_type.lower()}')
-        
-        # 8. Food Actual - Food Norm
-        filtered_df['food_diff'] = filtered_df['food_actual'] - filtered_df[foodnorm_col]
-        self.create_scatter_plot(
-            filtered_df,
-            'c3',
-            'food_diff',
-            f'FoodActual - FoodNorm ({pop_type} Households)'
-        )
-        self.save_plot(f'8_food_diff_{pop_type.lower()}')
+        return plt
 
-    def create_person_graphs(self, df, is_sedentary=False):
-        """Create per-person graphs"""
-        pop_type = "Sedentary" if is_sedentary else "Active"
-        foodnorm_col = "FoodNorm-sendetary" if is_sedentary else "FoodNorm-active"
-        filtered_df = df
+    def create_food_comparison_plot(self, df, lifestyle, per_capita=False):
+        """Plot 3: FoodActualY vs FoodNorm comparison"""
+        suffix = '_per_capita' if per_capita else ''
+        pop_type = 'Per Capita' if per_capita else 'Household'
         
-        # Calculate per-person metrics
-        metrics = {
-            'c3': 'c3',
-            'food_actual': "food_actual",
-            'food_norm': foodnorm_col,
-            'ZL': "ZL-sendetary" if is_sedentary=="Sendetary" else "ZL-active",
-            'ZU': "ZU-sendetary" if is_sedentary=="Sendetary" else "ZU-active",
-            'non_food_per_person' : 'non_food',
-        }
+        plt.figure()
         
-        for metric_name, col in metrics.items():
-            filtered_df[f'{metric_name}_per_person'] = filtered_df[col] / filtered_df['persons_count']
+        # Get correct columns based on lifestyle from glossary
+        food_actual = f'food_actual'#-{lifestyle}{suffix}'
+        food_norm = f'FoodNorm-{lifestyle}{suffix}'
         
-        # Create per-person versions of all graphs
-        # 1. Total Expenditure vs Food Expenditure per person
-        self.create_scatter_plot(
-            filtered_df,
-            'c3_per_person',
-            'food_actual_per_person',
-            f'Total Expenditure vs Food Expenditure per Person ({pop_type})'
-        )
-        self.save_plot(f'1p_expenditure_food_{pop_type.lower()}')
+        # Plot metrics
+        plt.scatter(df[food_actual], df[food_actual], alpha=0.5, color=self.colors[0], 
+                   label='FoodActualY')
+        plt.scatter(df[food_actual], df[food_norm], alpha=0.5, color=self.colors[1], 
+                   label='FoodNorm')
         
-        # 2. Total Expenditure vs Food Expenditure per person
-        self.create_scatter_plot(
-            filtered_df,
-            'c3_per_person',
-            'non_food_per_person_per_person',
-            f'Total Expenditure vs Non-Food Expenditure per Person ({pop_type})'
-        )
-        self.save_plot(f'2p_expenditure_nonfood_{pop_type.lower()}')
+        # Plot difference
+        diff = df[food_actual] - df[food_norm]
+        plt.scatter(df[food_actual], diff, alpha=0.5, color=self.colors[2], 
+                   label='Difference')
         
-        # Continue with all other per-person graphs...@@TBD
-        # [Add similar code blocks for graphs 2-8 with _per_person metrics]
+        plt.xlabel('FoodActualY')
+        plt.ylabel('Value')
+        plt.title(f'Food Actual vs Norm Comparison - {lifestyle.capitalize()} {pop_type}')
+        plt.legend()
         
+        return plt
+
+    def create_zl_zu_plot(self, df, lifestyle, per_capita=False):
+        """Plot 4: ZL vs ZU relationship with FoodNorm"""
+        suffix = '_per_capita' if per_capita else ''
+        pop_type = 'Per Capita' if per_capita else 'Household'
         
+        plt.figure()
         
+        # Get columns based on lifestyle
+        zl_col = f'ZL-{lifestyle}{suffix}'
+        zu_col = f'ZU-{lifestyle}{suffix}'
+        food_norm_col = f'FoodNorm-{lifestyle}{suffix}'
         
+        # Plot relationship
+        plt.scatter(df[zl_col], df[zu_col], alpha=0.5, color=self.colors[0], 
+                   label=f'ZU {lifestyle}')
+        plt.scatter(df[zl_col], df[food_norm_col], alpha=0.5, color=self.colors[1], 
+                   label='FoodNorm')
+        
+        # Add 3x reference line
+        zl_range = np.array([df[zl_col].min(), df[zl_col].max()])
+        plt.plot(zl_range, 3 * zl_range, '--', color=self.colors[2], 
+                label='3x Reference')
+        
+        plt.xlabel('ZL')
+        plt.ylabel('Value')
+        plt.title(f'ZU and FoodNorm vs ZL - {lifestyle.capitalize()} {pop_type}')
+        plt.legend()
+        
+        return plt
+
+    def create_deprivation_plot(self, df, lifestyle, per_capita=False):
+        """Plot 5: Household food deprivation distribution"""
+        suffix = '_per_capita' if per_capita else ''
+        pop_type = 'Per Capita' if per_capita else 'Household'
+        
+        plt.figure()
+        
+        # Calculate food deprivation using correct fields from glossary
+        food_actual = f'food_actual'#-{lifestyle}{suffix}'
+        food_norm = f'FoodNorm-{lifestyle}{suffix}'
+        deprivation = df[food_actual] - df[food_norm]
+        
+        # Sort households by deprivation
+        sorted_deprivation = np.sort(deprivation)
+        households = np.arange(len(sorted_deprivation))
+        
+        # Calculate poverty statistics
+        poor_households = (sorted_deprivation < 0).sum()
+        #print(f'deprivation-{lifestyle}{suffix} {deprivation}')
+        
+        poor_pct = (poor_households / len(sorted_deprivation)) * 100
+        
+        # Create distribution plot
+        plt.plot(households, sorted_deprivation, color=self.colors[0], 
+                label='Food Deprivation')
+        
+        # Add reference lines and regions
+        plt.axhline(y=0, color='black', linestyle='--', alpha=0.3,
+                   label='Zero Point (No Deprivation)')
+        plt.axvline(x=poor_households, color='red', linestyle='--', alpha=0.3,
+                   label=f'Poverty Line ({poor_pct:.1f}% households)')
+        
+        # Shade poverty region
+        plt.fill_between(households[:poor_households], 
+                        sorted_deprivation[:poor_households], 
+                        0, color='red', alpha=0.1, 
+                        label='Poor Households')
+        
+        plt.xlabel('Households (Ordered by Food Deprivation)')
+        plt.ylabel('FoodActualY - FoodNorm')
+        plt.title(f'Household Food Deprivation Distribution - {lifestyle.capitalize()} {pop_type}')
+        plt.legend()
+        
+        return plt
+
 def add_visualization_to_analyzer(FamilyGroupAnalyzer):
     """Add visualization methods to the analyzer class"""
     def plot_and_save_groups(self, plot_dir=None):
@@ -184,19 +196,42 @@ def add_visualization_to_analyzer(FamilyGroupAnalyzer):
         plot_dir = plot_dir or './graphs/'
         visualizer = GroupVisualizer(plot_dir)
         
-        # Create household-level graphs
-        print("\nGenerating active household graphs...")
-        visualizer.create_household_graphs(self.df, is_sedentary=False)
-        
-        print("\nGenerating sedentary household graphs...")
-        visualizer.create_household_graphs(self.df, is_sedentary=True)
-        
-        # Create per-person graphs
-        print("\nGenerating active per-person graphs...")
-        visualizer.create_person_graphs(self.df, is_sedentary=False)
-        
-        print("\nGenerating sedentary per-person graphs...")
-        visualizer.create_person_graphs(self.df, is_sedentary=True)
+        print("\nGenerating plots...")
+        # Generate plots for both lifestyles and both household/per-capita metrics
+        for lifestyle in ['active', 'sedentary']:
+            print(f"\nProcessing {lifestyle} lifestyle plots:")
+            for per_capita in [False, True]:
+                metric_type = 'per_capita' if per_capita else 'household'
+                print(f"\n  Generating {metric_type} metrics:")
+                
+                try:
+                    # 1. Food vs Total Expenses
+                    print("    - Creating food vs expenses plot...")
+                    plt = visualizer.create_food_vs_expenses_plot(self.df, lifestyle, per_capita)
+                    visualizer.save_plot(f'1_food_expenses_{lifestyle}_{metric_type}')
+                    
+                    # 2. c3 vs ZU
+                    print("    - Creating c3 vs ZU plot...")
+                    plt = visualizer.create_c3_zu_plot(self.df, lifestyle, per_capita)
+                    visualizer.save_plot(f'2_c3_zu_{lifestyle}_{metric_type}')
+                    
+                    # 3. Food Actual vs Norm
+                    print("    - Creating food comparison plot...")
+                    plt = visualizer.create_food_comparison_plot(self.df, lifestyle, per_capita)
+                    visualizer.save_plot(f'3_food_comparison_{lifestyle}_{metric_type}')
+                    
+                    # 4. ZL vs ZU relationship
+                    print("    - Creating ZL vs ZU plot...")
+                    plt = visualizer.create_zl_zu_plot(self.df, lifestyle, per_capita)
+                    visualizer.save_plot(f'4_zl_zu_{lifestyle}_{metric_type}')
+                    
+                    # 5. Household distribution
+                    print("    - Creating deprivation plot...")
+                    plt = visualizer.create_deprivation_plot(self.df, lifestyle, per_capita)
+                    visualizer.save_plot(f'5_deprivation_{lifestyle}_{metric_type}')
+                    
+                except Exception as e:
+                    print(f"Error generating {metric_type} plots for {lifestyle} lifestyle: {str(e)}")
         
         print(f"\nAll plots have been saved in: {plot_dir}")
     

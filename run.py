@@ -100,7 +100,7 @@ class FamilyGroupAnalyzer:
         
         values = [row[col] for col in age_columns]
         weights = self.sedentary_zl_weights if is_sedentary else self.active_zl_weights
-        food_norm_col = 'FoodNorm-sendetary' if is_sedentary else 'FoodNorm-active'
+        food_norm_col = 'FoodNorm-sedentary' if is_sedentary else 'FoodNorm-active'
         
         weighted_sum = sum(v * w for v, w in zip(values, weights[1:])) + weights[0]
         
@@ -150,33 +150,46 @@ class FamilyGroupAnalyzer:
         self.df['persons_count'] = self.df.apply(self.calculate_persons_count, axis=1)
         print("Calculated household sizes")
         
-        
-        # Calculate ZL and ZU active
+        # Calculate ZL for both active and sedentary
         self.df['ZL-active'] = self.df.apply(lambda row: self.calculate_zl(row, False), axis=1)
-        self.df['ZU-active'] = self.df.apply(lambda row: self.calculate_zu(row, False), axis=1)
+        self.df['ZL-sedentary'] = self.df.apply(lambda row: self.calculate_zl(row, True), axis=1)
         
-        # Calculate ZL and ZU sendetary
-        self.df['ZL-sendetary'] = self.df.apply(lambda row: self.calculate_zl(row, True), axis=1)
-        self.df['ZU-sendetary'] = self.df.apply(lambda row: self.calculate_zu(row, True), axis=1)
-        print("Calculated ZL and ZU values for active and sendetary")
+        # Calculate ZU (c^3) for active and sedentary
+        self.df['ZU-active'] = self.df.apply(lambda row: self.calculate_zu(row, False), axis=1)
+        self.df['ZU-sedentary'] = self.df.apply(lambda row: self.calculate_zu(row, True), axis=1)
+        
+        print("Calculated ZL and ZU values")
         
         # Calculate per-person metrics
-        metrics = {
-            'c3': 'c3',
-            'food_actual': 'food_actual',
-            'FoodNorm-active': 'FoodNorm-active',
-            'FoodNorm-sendetary': 'FoodNorm-sendetary',
-            'ZL-acvite': 'ZL-active',
-            'ZU-active': 'ZU-active',
-            'ZL-sendetary': 'ZL-sendetary',
-            'ZU-sendetary': 'ZU-sendetary'
-
-        }
+        for lifestyle in ['active', 'sedentary']:
+            # Get corresponding columns
+            food_actual_col = f'food_actual'
+            food_norm_col = f'FoodNorm-{lifestyle}'
+            zl_col = f'ZL-{lifestyle}'
+            zu_col = f'ZU-{lifestyle}'
+            
+            # Calculate per capita metrics
+            for metric in ['c3', zl_col, zu_col]:
+                self.df[f'{metric}_per_capita'] = self.df[metric] / self.df['persons_count']
+            
+            # Calculate food differences
+            self.df[f'food_norm_diff_{lifestyle}'] = (
+                self.df[food_actual_col] - self.df[food_norm_col]
+            )
+            
+            # Per capita versions of food metrics
+            self.df[f'{food_actual_col}_per_capita'] = (
+                self.df[food_actual_col] / self.df['persons_count']
+            )
+            self.df[f'{food_norm_col}_per_capita'] = (
+                self.df[food_norm_col] / self.df['persons_count']
+            )
+            self.df[f'food_norm_diff_{lifestyle}_per_capita'] = (
+                self.df[f'{food_actual_col}_per_capita'] - 
+                self.df[f'{food_norm_col}_per_capita']
+            )
         
-        for metric_name, col in metrics.items():
-            self.df[f'{metric_name}_per_person'] = self.df[col] / self.df['persons_count']
-        
-        print("Calculated per-person metrics")
+        print("Calculated all metrics and differences")
         return True
 
 def main():
