@@ -24,20 +24,20 @@ class GroupVisualizer:
         print(f"Saved plot: {full_path}")
 
     def create_food_vs_expenses_plot(self, df, lifestyle, per_capita=False):
-        """Plot 1: FoodActualX (c3) vs FoodActualY and FoodNorm"""
+        """Plot 1: Total Expenditure (c3) vs Food Expenditure and FoodNorm"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = 'Per Capita' if per_capita else 'Household'
         
         plt.figure()
         
         # Define columns according to glossary
-        x_col = f'c3{suffix}'  # FoodActualX
-        y_col = f'food_actual'#-{lifestyle}{suffix}'  # FoodActualY
+        x_col = f'c3{suffix}'  # Food ExpenditureX
+        y_col = f'food_actual{suffix}'#-{lifestyle}{suffix}'  # Food ExpenditureY
         norm_col = f'FoodNorm-{lifestyle}{suffix}'
         
         # Plot metrics
         plt.scatter(df[x_col], df[y_col], alpha=0.5, color=self.colors[0], 
-                   label='FoodActualY')
+                   label='Food Expenditure')
         plt.scatter(df[x_col], df[norm_col], alpha=0.5, color=self.colors[1], 
                    label='FoodNorm')
         
@@ -46,9 +46,9 @@ class GroupVisualizer:
         plt.scatter(df[x_col], diff, alpha=0.5, color=self.colors[2], 
                    label='Difference')
         
-        plt.xlabel('FoodActualX (Total Expenses c3)')
-        plt.ylabel('Value')
-        plt.title(f'Food Expenditure vs Total Expenses - {lifestyle.capitalize()} {pop_type}')
+        plt.xlabel('Total Expenditure (c3)')
+        plt.ylabel('Food Expenditure')
+        plt.title(f'Food Expenditure vs Total Expenditure - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
         
         return plt
@@ -74,7 +74,7 @@ class GroupVisualizer:
         plt.scatter(df[x_col], diff, alpha=0.5, color=self.colors[2], 
                    label='Difference')
         
-        plt.xlabel('Total Expenses (c3)')
+        plt.xlabel('Total Expenditure (c3)')
         plt.ylabel('Value')
         plt.title(f'c3 vs ZU Comparison - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
@@ -82,19 +82,19 @@ class GroupVisualizer:
         return plt
 
     def create_food_comparison_plot(self, df, lifestyle, per_capita=False):
-        """Plot 3: FoodActualY vs FoodNorm comparison"""
+        """Plot 3: Food Expenditure vs FoodNorm comparison"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = 'Per Capita' if per_capita else 'Household'
         
         plt.figure()
         
         # Get correct columns based on lifestyle from glossary
-        food_actual = f'food_actual'#-{lifestyle}{suffix}'
+        food_actual = f'food_actual{suffix}'#-{lifestyle}{suffix}'
         food_norm = f'FoodNorm-{lifestyle}{suffix}'
         
         # Plot metrics
         plt.scatter(df[food_actual], df[food_actual], alpha=0.5, color=self.colors[0], 
-                   label='FoodActualY')
+                   label='Food Expenditure')
         plt.scatter(df[food_actual], df[food_norm], alpha=0.5, color=self.colors[1], 
                    label='FoodNorm')
         
@@ -103,9 +103,9 @@ class GroupVisualizer:
         plt.scatter(df[food_actual], diff, alpha=0.5, color=self.colors[2], 
                    label='Difference')
         
-        plt.xlabel('FoodActualY')
+        plt.xlabel('Food Expenditure')
         plt.ylabel('Value')
-        plt.title(f'Food Actual vs Norm Comparison - {lifestyle.capitalize()} {pop_type}')
+        plt.title(f'Food Expenditure vs Norm Comparison - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
         
         return plt
@@ -148,7 +148,7 @@ class GroupVisualizer:
         plt.figure()
         
         # Calculate food deprivation using correct fields from glossary
-        food_actual = f'food_actual'#-{lifestyle}{suffix}'
+        food_actual = f'food_actual{suffix}'#-{lifestyle}{suffix}'
         food_norm = f'FoodNorm-{lifestyle}{suffix}'
         deprivation = df[food_actual] - df[food_norm]
         
@@ -179,7 +179,7 @@ class GroupVisualizer:
                         label='Poor Households')
         
         plt.xlabel('Households (Ordered by Food Deprivation)')
-        plt.ylabel('FoodActualY - FoodNorm')
+        plt.ylabel('Food Expenditure - FoodNorm')
         plt.title(f'Household Food Deprivation Distribution - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
         
@@ -215,7 +215,7 @@ def add_visualization_to_analyzer(FamilyGroupAnalyzer):
                     plt = visualizer.create_c3_zu_plot(self.df, lifestyle, per_capita)
                     visualizer.save_plot(f'2_c3_zu_{lifestyle}_{metric_type}')
                     
-                    # 3. Food Actual vs Norm
+                    # 3. Food Expenditure vs Norm
                     print("    - Creating food comparison plot...")
                     plt = visualizer.create_food_comparison_plot(self.df, lifestyle, per_capita)
                     visualizer.save_plot(f'3_food_comparison_{lifestyle}_{metric_type}')

@@ -31,7 +31,8 @@ Households below zero are considered poor
 
 
 
-
+Issues:
+1. per_capita: check the plotted graph for deprivation and others
 
 
 
