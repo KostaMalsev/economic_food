@@ -400,7 +400,7 @@ class GroupVisualizer:
         plt.title(f'Households with c3 > ZU by C3 Range ({min_c3}-{max_c3}) - {lifestyle.capitalize()} {pop_type}')
         
         # Add percentage and count labels on bars
-        for i, (pct, count, center, bucket_range) in enumerate(zip(
+        '''for i, (pct, count, center, bucket_range) in enumerate(zip(
                 merged_percentages, merged_bucket_counts, merged_bucket_centers, merged_bucket_ranges)):
             # Percentage on top
             plt.text(center, pct + 1, f'{pct:.1f}%', ha='center')
@@ -408,6 +408,10 @@ class GroupVisualizer:
             range_text = f'{bucket_range[0]}-{bucket_range[1]}'
             plt.text(center, pct/2, f'n={count}\n{range_text}', 
                     ha='center', va='center')
+        '''
+        for i, (pct, center) in enumerate(zip(merged_percentages, merged_bucket_centers)):
+            # Percentage on top
+            plt.text(center, pct + 1, f'{pct:.1f}%', ha='center')
         
         plt.grid(True, axis='y', alpha=0.3)
         plt.legend()
