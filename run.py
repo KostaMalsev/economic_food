@@ -139,6 +139,17 @@ class FamilyGroupAnalyzer:
         ]
         return sum(row[col] for col in age_columns)
 
+    def calculate_children_under_10(self, row):
+        """Calculate number of children under 10 years old in household"""
+        children_columns = [
+            #"0 -4 min1", "0 -4 min2",    # 0-4 years
+            #"5 - 9 min1", "5 - 9 min2",  # 5-9 years
+            #"10-14 min1", "10-14 min2",  # 10-14 years
+            #"15 - 17 min1", "15 - 17 min2"  # 15-17 years
+            "50+ min1", "50+ min2"
+        ]
+        return sum(row[col] for col in children_columns)
+
     def process_dataframe(self):
         """Process dataframe to calculate required metrics"""
         if self.df is None:
@@ -148,7 +159,9 @@ class FamilyGroupAnalyzer:
         
         # Calculate number of persons in each household
         self.df['persons_count'] = self.df.apply(self.calculate_persons_count, axis=1)
-        print("Calculated household sizes")
+        # Calculate number of children under 10
+        self.df['children_under_10'] = self.df.apply(self.calculate_children_under_10, axis=1)
+        print("Calculated household sizes and children counts")
         
         # Calculate ZL for both active and sedentary
         self.df['ZL-active'] = self.df.apply(lambda row: self.calculate_zl(row, False), axis=1)
