@@ -44,14 +44,14 @@ class FamilyGroupAnalyzer:
         ]
         
         self.sedentary_zu_weights = [
-            3097.054841,                     # base
-            1778.319747, 2605.596992,        # 0-4
-            3687.393166, 2312.422585,        # 5-9
-            3060.896961, 2898.566112,        # 10-14
-            2341.091806, 4116.165700,        # 15-17
-            3508.569279, 4451.630466,        # 18-29
-            4202.082292, 5705.095960,        # 30-49
-            3561.622011, 4707.097319         # 50+
+            3467.7127111,                    # base
+            2060.1814015, 2533.9932615,      # 0-4 
+            3205.0854474, 1343.1611015,      # 5-9
+            182.1488577, 2834.3453616,       # 10-14
+            5978.3193323, 1850.2039152,      # 15-17
+            2984.0997578, 1980.4124585,      # 18-29
+            4274.668595, 6407.2484325,       # 30-49
+            5433.0485529, 3862.4569651       # 50+
         ]
 
     def read_csv(self):
@@ -183,7 +183,7 @@ class FamilyGroupAnalyzer:
             
             # Calculate per capita metrics
             for metric in ['c3', zl_col, zu_col]:
-                self.df[f'{metric}_per_capita'] = self.df[metric] / self.df['persons_count']
+                self.df[f'{metric}_per_capita'] = self.df[metric] / (self.df['persons_count'])
             
             # Calculate food differences
             self.df[f'food_norm_diff_{lifestyle}'] = (
@@ -192,10 +192,10 @@ class FamilyGroupAnalyzer:
             
             # Per capita versions of food metrics
             self.df[f'{food_actual_col}_per_capita'] = (
-                self.df[food_actual_col] / self.df['persons_count']
+                self.df[food_actual_col] / (self.df['persons_count'])
             )
             self.df[f'{food_norm_col}_per_capita'] = (
-                self.df[food_norm_col] / self.df['persons_count']
+                self.df[food_norm_col] / (self.df['persons_count'])
             )
             self.df[f'food_norm_diff_{lifestyle}_per_capita'] = (
                 self.df[f'{food_actual_col}_per_capita'] - 
