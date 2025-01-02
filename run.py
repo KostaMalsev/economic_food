@@ -224,7 +224,7 @@ def main():
     # Initialize visualization manager and generate plots
     print("\nGenerating visualizations...")
     viz_manager = VisualizationManager('./graphs/')
-    viz_manager.generate_all_plots(analyzer.df)
+    viz_manager.generate_all_plots(analyzer.df,None,True)
     
     print("\nAnalysis complete!")
 

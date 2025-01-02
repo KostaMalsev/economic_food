@@ -38,6 +38,7 @@ class VisualizationManager:
             lifestyles = ['active', 'sedentary']
         if per_capita_options is None:
             per_capita_options = [True, False]
+        else: per_capita_options = [True]
         
         for lifestyle in lifestyles:
             print(f"\nGenerating plots for {lifestyle} lifestyle:")
@@ -46,7 +47,7 @@ class VisualizationManager:
                 print(f"\nGenerating {metric_type} metrics:")
                 
                 try:
-                    for graph_num in range(1, 5): #1,13
+                    for graph_num in range(7,13): #1,13
                         print(f"  Creating graph {graph_num}...")
                         visualizer = self.get_visualizer(graph_num)
                         plt = visualizer.create_graph(graph_num, df, lifestyle, per_capita)
