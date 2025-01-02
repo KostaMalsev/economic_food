@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from base_visualizer import BaseVisualizer
 
 class NormalizedVisualizer(BaseVisualizer):
+    
+    
     def create_graph11(self, df, lifestyle, per_capita=False):
         """Food Sufficiency by Total Expenditure (Normalized)"""
         suffix = '_per_capita' if per_capita else ''
@@ -20,7 +22,7 @@ class NormalizedVisualizer(BaseVisualizer):
         df = df[df['c3_pct_diff'] <= 450]
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, 'c3_pct_diff', bucket_size=250
+            df, 'c3_pct_diff', bucket_size=70
         )
         
         metrics = {
@@ -53,7 +55,7 @@ class NormalizedVisualizer(BaseVisualizer):
                         xytext=(0, 5), textcoords='offset points',
                         ha='center', va='bottom', fontsize=8)
             
-            plt.annotate(f'{row["c3_pct_diff"]/100:.1f}x', 
+            plt.annotate(f'{row["c3_pct_diff"]/100:.1f}', 
                         xy=(row['c3_pct_diff'], row['food_pct_above_norm']-3),
                         xytext=(0, 2), textcoords='offset points',
                         ha='center', va='bottom', fontsize=6)
@@ -83,8 +85,9 @@ class NormalizedVisualizer(BaseVisualizer):
         df['c3_pct_diff'] = ((df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']) / 
                             df[f'ZU-{lifestyle}{suffix}'] * 100)
         
+        bucket_size = 70
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, 'food_pct_diff', bucket_size=250
+            df, 'food_pct_diff', bucket_size=bucket_size
         )
         
         metrics = {
@@ -147,7 +150,7 @@ class NormalizedVisualizer(BaseVisualizer):
         poor_pct = (total_poor / len(df)) * 100
         
         plt.title(f'Normalized Food Sacrifice Analysis - {lifestyle.capitalize()}\n'
-                 f'Bucket Size: 250 Households, Total Poor: {poor_pct:.1f}%')
+                 f'Bucket Size: {bucket_size} Households, Total Poor: {poor_pct:.1f}%')
         
         # Combine legends
         lines = line1 + line2 + line3

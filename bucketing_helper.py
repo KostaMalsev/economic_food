@@ -62,6 +62,7 @@ class BucketingHelper:
         
         return df, final_bucket_width
 
+
     @staticmethod
     def calculate_bucket_stats(df, bucket_column='bucket', metrics=None):
         """Calculate statistics for each bucket"""

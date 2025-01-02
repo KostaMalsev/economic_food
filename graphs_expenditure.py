@@ -105,7 +105,7 @@ class ExpenditureVisualizer(BaseVisualizer):
         pop_type = self._get_display_type(per_capita)
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'food_actual{suffix}', bucket_size=100
+            df, f'food_actual{suffix}', bucket_size=70
         )
         
         metrics = {
@@ -147,7 +147,7 @@ class ExpenditureVisualizer(BaseVisualizer):
         pop_type = self._get_display_type(per_capita)
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'ZL-{lifestyle}{suffix}', bucket_size=100
+            df, f'ZL-{lifestyle}{suffix}', bucket_size=70
         )
         
         metrics = {

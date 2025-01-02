@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from base_visualizer import BaseVisualizer
 
 class SacrificeVisualizer(BaseVisualizer):
+    
     def create_graph5(self, df, lifestyle, per_capita=False):
         """Food Sacrifice Distribution"""
         suffix = '_per_capita' if per_capita else ''
@@ -64,7 +65,7 @@ class SacrificeVisualizer(BaseVisualizer):
         df['sacrifice'] = df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, 'sacrifice', bucket_size=100
+            df, 'sacrifice', bucket_size=1
         )
         
         metrics = {
