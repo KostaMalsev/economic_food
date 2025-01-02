@@ -8,9 +8,9 @@ class ExpenditureVisualizer(BaseVisualizer):
         """Food Expenditure vs Total Expenditure Analysis"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
-        
+        max_value=20000
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', max_value=20000, bucket_size=100
+            df, f'c3{suffix}', max_value, 70
         )
         
         metrics = {
@@ -63,7 +63,7 @@ class ExpenditureVisualizer(BaseVisualizer):
         pop_type = self._get_display_type(per_capita)
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', bucket_size=100
+            df, f'c3{suffix}', 20000,70
         )
         
         metrics = {
