@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-from plot import add_visualization_to_analyzer 
+from visualization_manager import VisualizationManager
 
 class FamilyGroupAnalyzer:
     def __init__(self, csv_path):
@@ -221,10 +221,10 @@ def main():
         print("Failed to process data")
         return
     
-    # Generate visualizations
+    # Initialize visualization manager and generate plots
     print("\nGenerating visualizations...")
-    add_visualization_to_analyzer(FamilyGroupAnalyzer)
-    analyzer.plot_and_save_groups('./graphs/')
+    viz_manager = VisualizationManager('./graphs/')
+    viz_manager.generate_all_plots(analyzer.df)
     
     print("\nAnalysis complete!")
 
