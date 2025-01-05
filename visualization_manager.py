@@ -48,7 +48,7 @@ class VisualizationManager:
                 print(f"\nGenerating {metric_type} metrics:")
                 
                 try:
-                    for graph_num in range(70,71): #1,13
+                    for graph_num in range(1,13): #1,13
                         print(f"  Creating graph {graph_num}...")
                         visualizer = self.get_visualizer(graph_num)
                         plt = visualizer.create_graph(graph_num, df, lifestyle, per_capita)
