@@ -95,26 +95,29 @@ class NormalizedVisualizer(BaseVisualizer):
 
         plt.tight_layout()
         return plt
+    
+
+
 
     def create_graph12(self, df, lifestyle, per_capita=True):
         """Sorted Percentage Differences Analysis with Bucket Means"""
         suffix = '_per_capita'  # Always per capita for this graph
-
+        
         df = df.copy()
-        df['food_pct_diff'] = ((df[f'food_actual{suffix}'] -
+        df['food_pct_diff'] = ((df[f'food_actual{suffix}'] - 
                                 df[f'FoodNorm-{lifestyle}{suffix}']) /
-                               df[f'FoodNorm-{lifestyle}{suffix}'] *
-                               100)
-        df['c3_pct_diff'] = ((df[f'c3{suffix}'] -
-                              df[f'ZU-{lifestyle}{suffix}']) /
-                             df[f'ZU-{lifestyle}{suffix}'] *
-                             100)
-
+                            df[f'FoodNorm-{lifestyle}{suffix}'] * 
+                            100)
+        df['c3_pct_diff'] = ((df[f'c3{suffix}'] - 
+                            df[f'ZU-{lifestyle}{suffix}']) /
+                            df[f'ZU-{lifestyle}{suffix}'] * 
+                            100)
+        
         bucket_size = 70
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'food_pct_diff', bucket_size=bucket_size
         )
-
+        
         metrics = {
             'food_pct_diff': {
                 'columns': ['food_pct_diff'],
@@ -131,58 +134,75 @@ class NormalizedVisualizer(BaseVisualizer):
             'poor_count': {
                 'columns': ['food_pct_diff'],
                 'func': lambda x: (x['food_pct_diff'] < 0).sum()
+            },
+            'sample_count': {  # Add new metric for sample counts
+                'columns': ['food_pct_diff'],
+                'func': lambda x: len(x)
             }
         }
-
+        
         stats = self.helper.calculate_bucket_stats(
             df_bucketed, metrics=metrics)
-
+        
         # Create plot with three y-axes
         fig, ax1 = plt.subplots(figsize=(15, 8))
         ax2 = ax1.twinx()
         ax3 = ax1.twinx()
         ax3.spines['right'].set_position(('outward', 60))
-
+        
         bucket_centers = np.arange(len(stats)) * 250 + 125
-
+        
         # Create connected line plots
         line1 = ax1.plot(bucket_centers, stats['food_pct_diff'],
-                         '-o', color='purple', linewidth=1, markersize=3,
-                         label='Mean Food Norm % Diff')
+                        '-o', color='purple', linewidth=1, markersize=3,
+                        label='Mean Food Norm % Diff')
         line2 = ax2.plot(bucket_centers, stats['c3_pct_diff'],
-                         '-o', color='green', linewidth=1, markersize=3,
-                         label='Mean Upper Poverty Line % Diff')
+                        '-o', color='green', linewidth=1, markersize=3,
+                        label='Mean Upper Poverty Line % Diff')
         line3 = ax3.plot(bucket_centers, stats['household_size'],
-                         '-o', color='blue', linewidth=1, markersize=3,
-                         label='Mean Household Size')
-
+                        '-o', color='blue', linewidth=1, markersize=3,
+                        label='Mean Household Size')
+        
         # Add reference line at 0%
         ax1.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Threshold')
+        y_min = ax1.get_ylim()[0]
+        y_max = ax1.get_ylim()[1]
+        
+        text_y_pos = y_min + (y_max - y_min) * 0.1
 
+        # Add sample count annotations
+        for i, count in enumerate(stats['sample_count']):
+            ax1.text(bucket_centers[i], text_y_pos,
+                    f'n={count}',
+                    rotation=45,
+                    verticalalignment='top',
+                    horizontalalignment='right',
+                    fontsize=8)
+        
         # Set labels
         ax1.set_xlabel(
             'Households (Bucketed and Ordered by (Food-Norm)/Norm %)')
         ax1.set_ylabel('Food Norm % Difference', color='purple')
         ax2.set_ylabel('Upper Poverty Line % Difference', color='green')
         ax3.set_ylabel('Household Size', color='blue')
-
+        
         # Set colors
         ax1.tick_params(axis='y', labelcolor='purple')
         ax2.tick_params(axis='y', labelcolor='green')
         ax3.tick_params(axis='y', labelcolor='blue')
-
+        
         # Calculate total poor percentage
         total_poor = (df['food_pct_diff'] < 0).sum()
         poor_pct = (total_poor / len(df)) * 100
-
+        
         plt.title(f'Normalized Food Sacrifice Analysis - {lifestyle.capitalize()}\n'
-                  f'Bucket Size: {bucket_size} Households, Total Poor: {poor_pct:.1f}%')
-
+                f'Bucket Size: {bucket_size} Households, Total Poor: {poor_pct:.1f}%')
+        
         # Combine legends
         lines = line1 + line2 + line3
         labels = [l.get_label() for l in lines]
         ax1.legend(lines, labels, loc='upper left', bbox_to_anchor=(1.15, 1))
-
+        
         plt.tight_layout()
         return plt

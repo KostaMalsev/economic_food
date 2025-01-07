@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import bucketing_helper as bh
-from scipy.stats import gaussian_kde
 
 
 from base_visualizer import BaseVisualizer
