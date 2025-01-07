@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import bucketing_helper as bh
+from scipy.stats import gaussian_kde
+
 
 from base_visualizer import BaseVisualizer
 
@@ -165,6 +168,14 @@ class SufficiencyVisualizer(BaseVisualizer):
 
         return plt
 
+
+
+
+    
+
+    
+
+    
     def create_graph70(
             self,
             df,
@@ -174,16 +185,15 @@ class SufficiencyVisualizer(BaseVisualizer):
             end_bucket=9,
             max_value=7000):
         """
-        Plot overlaid histograms of food expenditure values for each bucket in the specified range
-        with improved layout and visibility
-
+        Plot histograms of food expenditure values for each bucket
+        
         Parameters:
         - df: DataFrame containing the data
         - lifestyle: 'active' or 'sedentary'
         - per_capita: Boolean for per capita metrics
         - start_bucket: Starting bucket ID
         - end_bucket: Ending bucket ID
-        - max_value: Maximum value for x-axis (default: 12000)
+        - max_value: Maximum value for x-axis (default: 7000)
         """
         suffix = '_per_capita' if per_capita else ''
         pop_type = 'Per Capita' if per_capita else 'Household'
@@ -191,24 +201,20 @@ class SufficiencyVisualizer(BaseVisualizer):
         # Create figure with two subplots - main histogram and sample sizes
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12),
                                        gridspec_kw={'height_ratios': [4, 1]})
-        bucket_size = 100
 
-        # Filter and sort data
+        # Filter data by max_value first
         mask = df[f'c3{suffix}'] <= max_value
-        df_filtered = df[mask].copy().sort_values(f'c3{suffix}')
+        df_filtered = df[mask].copy()
 
-        # Create fixed-width buckets
-        min_c3 = df_filtered[f'c3{suffix}'].min()
-        max_c3 = df_filtered[f'c3{suffix}'].max()
-        n_buckets = len(df_filtered) // bucket_size
-        bucket_width = (max_c3 - min_c3) / n_buckets
-
-        # Create bucket boundaries and assign buckets
-        bucket_edges = np.arange(min_c3, max_c3 + bucket_width, bucket_width)
-        df_filtered['bucket'] = pd.cut(df_filtered[f'c3{suffix}'],
-                                       bins=bucket_edges,
-                                       labels=False,
-                                       include_lowest=True)
+        # Use BucketingHelper to create buckets
+        bucket_helper = bh.BucketingHelper()
+        df_bucketed, bucket_width = bucket_helper.create_fixed_width_buckets(
+            df_filtered,
+            value_column=f'c3{suffix}',
+            max_value=max_value,
+            bucket_size=200,  # Target size for each bucket
+            min_samples=70    # Minimum samples before merging buckets
+        )
 
         # Set up color cycle for different buckets
         colors = plt.cm.viridis(
@@ -225,7 +231,7 @@ class SufficiencyVisualizer(BaseVisualizer):
 
         # Plot histograms for each bucket
         for i, bucket_id in enumerate(range(start_bucket, end_bucket + 1)):
-            bucket_data = df_filtered[df_filtered['bucket'] == bucket_id]
+            bucket_data = df_bucketed[df_bucketed['bucket'] == bucket_id]
 
             if len(bucket_data) > 0:
                 # Calculate bucket statistics
@@ -237,19 +243,19 @@ class SufficiencyVisualizer(BaseVisualizer):
                 pct_above_norm = (bucket_data[f'food_actual{suffix}'] >
                                   bucket_data[f'FoodNorm-{lifestyle}{suffix}']).mean() * 100
 
-                # Plot histogram with reduced alpha for better visibility
-                counts, bins, patches = ax1.hist(bucket_data[f'food_actual{suffix}'],
-                                                 bins=30, density=True, alpha=0.2,
-                                                 histtype='stepfilled', color=colors[i],
-                                                 label=f'Bucket {bucket_id}',
-                                                 range=(0, max_value))  # Set range for histogram
+                # Get food expenditure data
+                food_data = bucket_data[f'food_actual{suffix}'].values
 
-                # Plot kernel density estimate with increased line width
-                from scipy.stats import gaussian_kde
-                kde = gaussian_kde(bucket_data[f'food_actual{suffix}'])
-                # Use max_value for KDE range
-                x_range = np.linspace(0, max_value, 100)
-                ax1.plot(x_range, kde(x_range), color=colors[i], linewidth=2)
+                # Plot histogram
+                ax1.hist(food_data, bins=30, 
+                        alpha=0.6,  # Increased alpha for better visibility
+                        color=colors[i],
+                        label=f'Bucket {bucket_id}',
+                        range=(0, max_value),
+                        density=True,  # Normalize histogram
+                        histtype='bar',
+                        edgecolor='black',  # Add edge color for better separation
+                        linewidth=0.5)      # Thin edges for histograms
 
                 # Store statistics for this bucket
                 bucket_stats.append({
@@ -262,9 +268,9 @@ class SufficiencyVisualizer(BaseVisualizer):
                     'c3_range': c3_range
                 })
 
-                # Format legend entry
+                # Format legend entry with C3 range
                 legend_stats.append(
-                    f'Bucket {bucket_id}:\n'
+                    f'Bucket {bucket_id} (C3: {c3_range}):\n'
                     f'n={n_samples}\n'
                     f'mean={mean_food:.0f}\n'
                     f'median={median_food:.0f}\n'

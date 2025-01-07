@@ -38,10 +38,18 @@ class NormalizedVisualizer(BaseVisualizer):
                 'columns': ['c3_pct_diff'],
                 'func': lambda x: x['c3_pct_diff'].mean()
             },
+            'food_pct_diff': {
+                'columns': ['food_pct_diff'],
+                'func': lambda x: x['food_pct_diff'].mean()
+            },
             'count': {
                 'columns': ['c3_pct_diff'],
                 'func': len
-            }
+            },
+            'c3_pct_above_zu': {
+                'columns': ['c3_pct_diff'],
+                'func': lambda x: (x['c3_pct_diff'] > 0).mean() * 100
+            },
         }
 
         stats = self.helper.calculate_bucket_stats(
@@ -52,6 +60,8 @@ class NormalizedVisualizer(BaseVisualizer):
         # Bar plot of percentage above food norm
         plt.bar(stats['c3_pct_diff'], stats['food_pct_above_norm'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[0])
+        plt.bar(stats['c3_pct_diff'], stats['c3_pct_above_zu'],
+                width=bucket_width * 0.8, alpha=0.6, color=self.colors[1])
 
         # Add annotations
         for _, row in stats.iterrows():
@@ -60,10 +70,16 @@ class NormalizedVisualizer(BaseVisualizer):
                          xytext=(0, 5), textcoords='offset points',
                          ha='center', va='bottom', fontsize=8)
 
-            plt.annotate(f'{row["c3_pct_diff"] / 100:.1f}',
+            plt.annotate(f'{row["food_pct_diff"] / 100:.1f}',
                          xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 3),
                          xytext=(0, 2), textcoords='offset points',
                          ha='center', va='bottom', fontsize=6)
+            
+            plt.annotate(f'({int(row["count"])})',
+                         xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 5),
+                         xytext=(0, 1), textcoords='offset points',
+                         ha='center', va='bottom', fontsize=6)
+            
 
         plt.xlabel('Mean % Difference from Upper Poverty Line ((C3-ZU)/ZU)')
         plt.ylabel('% of Households Above Food Norm')

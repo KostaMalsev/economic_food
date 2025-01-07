@@ -10,6 +10,7 @@ class ExpenditureVisualizer(BaseVisualizer):
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
         max_value = 20000
+        
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, f'c3{suffix}', max_value, 70
         )
