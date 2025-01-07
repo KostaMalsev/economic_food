@@ -86,6 +86,11 @@ class SufficiencyVisualizer(BaseVisualizer):
                      f'N={int(row["count"])}',
                      ha='center', va='top', fontsize=7)
 
+        # Explanation box
+        plt.text(0.05, 0.95, 
+                 'Formula used:\nAbove Norm: (FoodActual > Food Norm) * 100\nAbove ZU: (c3 > ZU) * 100\nΔ (Delta): (c3 - ZU)\nN: count of households',
+                 horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))
+
         plt.xlabel(f'Total Expenditure (c3) {pop_type}')
         plt.ylabel('Percentage of households above threshold')
         plt.title(
@@ -154,7 +159,12 @@ class SufficiencyVisualizer(BaseVisualizer):
             plt.text(row['c3_mean'], -5,
                      f'N={int(row["count"])}',
                      ha='center', va='top', fontsize=7)
-
+        
+        # Explanation box
+        plt.text(0.05, 0.95, 
+                 'Formula used:\nAbove ZU: (c3 > ZU) * 100\n C3: C3 \nN: count of households',
+                 horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))
+        
         plt.xlabel(f'Total Expenditure (c3) {pop_type}')
         plt.ylabel('Percentage Above Upper Poverty Line')
         plt.title(
@@ -184,20 +194,12 @@ class SufficiencyVisualizer(BaseVisualizer):
             end_bucket=9,
             max_value=7000):
         """
-        Plot histograms of food expenditure values for each bucket
-        
-        Parameters:
-        - df: DataFrame containing the data
-        - lifestyle: 'active' or 'sedentary'
-        - per_capita: Boolean for per capita metrics
-        - start_bucket: Starting bucket ID
-        - end_bucket: Ending bucket ID
-        - max_value: Maximum value for x-axis (default: 7000)
+        Plot histograms of food expenditure values for each bucket with normal distribution fit
         """
         suffix = '_per_capita' if per_capita else ''
         pop_type = 'Per Capita' if per_capita else 'Household'
 
-        # Create figure with two subplots - main histogram and sample sizes
+        # Create figure with two subplots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12),
                                        gridspec_kw={'height_ratios': [4, 1]})
 
@@ -211,8 +213,8 @@ class SufficiencyVisualizer(BaseVisualizer):
             df_filtered,
             value_column=f'c3{suffix}',
             max_value=max_value,
-            bucket_size=200,  # Target size for each bucket
-            min_samples=70    # Minimum samples before merging buckets
+            bucket_size=200,
+            min_samples=70
         )
 
         # Set up color cycle for different buckets
@@ -227,6 +229,11 @@ class SufficiencyVisualizer(BaseVisualizer):
         # Store statistics for legend
         legend_stats = []
         bucket_stats = []
+        max_y = 0
+
+        # Normal distribution function
+        def normal_dist(x, mean, std):
+            return (1 / (std * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - mean) / std) ** 2)
 
         # Plot histograms for each bucket
         for i, bucket_id in enumerate(range(start_bucket, end_bucket + 1)):
@@ -246,15 +253,29 @@ class SufficiencyVisualizer(BaseVisualizer):
                 food_data = bucket_data[f'food_actual{suffix}'].values
 
                 # Plot histogram
-                ax1.hist(food_data, bins=30, 
-                        alpha=0.6,  # Increased alpha for better visibility
+                hist, bins, _ = ax1.hist(food_data, bins=30, 
+                        alpha=0.6,
                         color=colors[i],
                         label=f'Bucket {bucket_id}',
                         range=(0, max_value),
-                        density=True,  # Normalize histogram
+                        density=True,
                         histtype='bar',
-                        edgecolor='black',  # Add edge color for better separation
-                        linewidth=0.5)      # Thin edges for histograms
+                        edgecolor='black',
+                        linewidth=0.5)
+
+                # Generate points for normal distribution curve
+                x_smooth = np.linspace(0, max_value, 200)
+                y_smooth = normal_dist(x_smooth, mean_food, std_food)
+
+                # Plot the normal distribution fit
+                ax1.plot(x_smooth, y_smooth, 
+                        color=colors[i], 
+                        linestyle='--', 
+                        linewidth=2, 
+                        alpha=0.8)
+                
+                # Track maximum y value
+                max_y = max(max_y, max(hist), max(y_smooth))
 
                 # Store statistics for this bucket
                 bucket_stats.append({
@@ -290,8 +311,9 @@ class SufficiencyVisualizer(BaseVisualizer):
         ax1.set_ylabel('Density')
         ax1.grid(True, alpha=0.3)
 
-        # Set x-axis limit for main plot
+        # Set axis limits
         ax1.set_xlim(0, max_value)
+        ax1.set_ylim(0, max_y * 1.1)  # Set y-axis limit to 10% above maximum point
 
         # Create title with total sample information
         total_samples = sum(stat['n_samples'] for stat in bucket_stats)

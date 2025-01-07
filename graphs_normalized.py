@@ -26,7 +26,7 @@ class NormalizedVisualizer(BaseVisualizer):
         df = df[df['c3_pct_diff'] <= 450]
 
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, 'c3_pct_diff', bucket_size=70
+            df, 'c3_pct_diff', bucket_size=100
         )
 
         metrics = {
@@ -70,7 +70,7 @@ class NormalizedVisualizer(BaseVisualizer):
                          xytext=(0, 5), textcoords='offset points',
                          ha='center', va='bottom', fontsize=8)
 
-            plt.annotate(f'{row["food_pct_diff"] / 100:.1f}',
+            plt.annotate(f'Δ{row["food_pct_diff"] / 100:.1f}',
                          xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 3),
                          xytext=(0, 2), textcoords='offset points',
                          ha='center', va='bottom', fontsize=6)
@@ -79,7 +79,12 @@ class NormalizedVisualizer(BaseVisualizer):
                          xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 5),
                          xytext=(0, 1), textcoords='offset points',
                          ha='center', va='bottom', fontsize=6)
-            
+        
+        # Explanation box
+
+        plt.text(0.05, 0.95, 
+                 'Formula used:\nAbove Norm: (FoodActual > FoodNorm)*100\nAbove ZU: (c3 > ZU)*100\nΔ (Delta): (FoodActual - FoodNorm)/FoodNorm\n(N): count of households',
+                 horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))    
 
         plt.xlabel('Mean % Difference from Upper Poverty Line ((C3-ZU)/ZU)')
         plt.ylabel('% of Households Above Food Norm')
@@ -168,7 +173,7 @@ class NormalizedVisualizer(BaseVisualizer):
                     label='Threshold')
         y_min = ax1.get_ylim()[0]
         y_max = ax1.get_ylim()[1]
-        
+
         text_y_pos = y_min + (y_max - y_min) * 0.1
 
         # Add sample count annotations
