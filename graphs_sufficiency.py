@@ -213,8 +213,8 @@ class SufficiencyVisualizer(BaseVisualizer):
             df_filtered,
             value_column=f'c3{suffix}',
             max_value=max_value,
-            bucket_size=200,
-            min_samples=70
+            bucket_size=1000,
+            min_samples=1000
         )
 
         # Set up color cycle for different buckets
@@ -266,6 +266,12 @@ class SufficiencyVisualizer(BaseVisualizer):
                 # Generate points for normal distribution curve
                 x_smooth = np.linspace(0, max_value, 200)
                 y_smooth = normal_dist(x_smooth, mean_food, std_food)
+
+                max_smooth = max(y_smooth)
+                max_hist = max(hist)
+                mx = max(max_smooth,max_hist)
+
+                y_smooth = (y_smooth/max_smooth) * mx
 
                 # Plot the normal distribution fit
                 ax1.plot(x_smooth, y_smooth, 
