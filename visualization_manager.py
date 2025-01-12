@@ -57,7 +57,7 @@ class VisualizationManager:
                 print(f"\nGenerating {metric_type} metrics:")
 
                 try:
-                    for graph_num in [70]:#range(1,13):#[70]:
+                    for graph_num in (list(range(1, 13)) + [70]): #[70]: #range(1,13):
                         print(f"  Creating graph {graph_num}...")
                         visualizer = self.get_visualizer(graph_num)
                         plt = visualizer.create_graph(
