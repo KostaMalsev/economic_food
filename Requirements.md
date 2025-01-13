@@ -32,10 +32,21 @@ Updated requirements:
    - Zero point indicates Food Actual = Food Norm (Ravallion's upper poverty line ZU)
    - Households below zero are considered poor
 
-**Issues**
 
-1. **Per Capita Graphs**
-   - Check the plotted graph for deprivation and others
+
+**Presentation plan** 13/1
+
+0. Explain the way the buckets were built.
+   [max, min samples in buckets, from right to left].
+1. Graph 5 and graph 12 - discuss normalization
+   Can discuss graph 10.
+2. Graph 7 and graph 11 - discuss normalization and x and y axises
+3. Graph 70 - discuss the graph results and its limitations.
+4. Graph 1-4: raw data presentation with buckets.
+
+
+
+
 
 **Requirements**
 
