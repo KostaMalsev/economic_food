@@ -38,8 +38,10 @@ class VisualizationManager:
         """Get appropriate visualizer for a graph number"""
         viz_type = self.graph_mapping.get(graph_num)
         if viz_type is None:
-            raise ValueError(f"No visualizer found for graph {graph_num}")
+            print(f"No visualizer found for graph {graph_num}")
+            return None
         return self.visualizers[viz_type]
+    
 
     def generate_all_plots(self, df, lifestyles=None, per_capita_options=None):
         """Generate all plots for specified lifestyles and per capita options"""
@@ -56,17 +58,25 @@ class VisualizationManager:
                 metric_type = 'per_capita' if per_capita else 'household'
                 print(f"\nGenerating {metric_type} metrics:")
 
-                try:
-                    for graph_num in (list(range(1, 13)) + [70]): #[70]: #range(1,13):
-                        print(f"  Creating graph {graph_num}...")
+                for graph_num in [12]: #list(range(1,13)) + [70]:  
+                    print(f"  Creating graph {graph_num}...")
+                    
+                    try:
+                        # Get visualizer first
                         visualizer = self.get_visualizer(graph_num)
+                        if visualizer is None:
+                            print(f"Graph {graph_num} is not implemented")
+                            continue
+                            
+                        # If we got here, we have a valid visualizer
                         plt = visualizer.create_graph(
                             graph_num, df, lifestyle, per_capita)
                         visualizer.save_plot(
                             f'graph{graph_num}_{lifestyle}_{metric_type}')
-
-                except Exception as e:
-                    print(f"Error generating {metric_type} plots for {lifestyle} " f"lifestyle: {str(e)}")
+                            
+                    except Exception as e:
+                        print(f"Error with graph {graph_num}: {str(e)}")
+                        continue  # Continue to next graph if there's an error
 
         print(f"\nAll plots have been saved in: {self.save_dir}")
 

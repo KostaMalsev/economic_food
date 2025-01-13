@@ -9,7 +9,7 @@ from base_visualizer import BaseVisualizer
 
 class SufficiencyVisualizer(BaseVisualizer):
 
-    def create_graph7(self, df, lifestyle, per_capita=False):
+    def create_graph7(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Food Sufficiency Analysis by Income Level"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -27,12 +27,12 @@ class SufficiencyVisualizer(BaseVisualizer):
             'above_zu': {
                 'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
                 'func': lambda x: (x[f'c3{suffix}'] >
-                                   x[f'ZU-{lifestyle}{suffix}']).mean() * 100
+                                   x[f'ZU-{lifestyle}{suffix}']).mean() * 100 
             },
             'mean_food_gap': {
                 'columns': [f'food_actual{suffix}', f'FoodNorm-{lifestyle}{suffix}'],
                 'func': lambda x: (x[f'food_actual{suffix}'] -
-                                   x[f'FoodNorm-{lifestyle}{suffix}']).mean()
+                                   x[f'FoodNorm-{lifestyle}{suffix}']).mean() 
             },
             'mean_c3_gap': {
                 'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
@@ -41,7 +41,7 @@ class SufficiencyVisualizer(BaseVisualizer):
             },
             'c3_mean': {
                 'columns': [f'c3{suffix}'],
-                'func': lambda x: x[f'c3{suffix}'].mean()
+                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else  x[f'c3{suffix}'].median()
             },
             'count': {
                 'columns': [f'c3{suffix}'],
@@ -103,7 +103,7 @@ class SufficiencyVisualizer(BaseVisualizer):
 
         return plt
 
-    def create_graph8(self, df, lifestyle, per_capita=False):
+    def create_graph8(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Expenditure Adequacy Analysis"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -125,7 +125,7 @@ class SufficiencyVisualizer(BaseVisualizer):
             },
             'c3_mean': {
                 'columns': [f'c3{suffix}'],
-                'func': lambda x: x[f'c3{suffix}'].mean()
+                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else x[f'c3{suffix}'].median()
             },
             'count': {
                 'columns': [f'c3{suffix}'],
@@ -176,15 +176,10 @@ class SufficiencyVisualizer(BaseVisualizer):
         plt.tight_layout()
 
         return plt
-
-
-
-
     
 
-    
 
-    
+
     def create_graph70(
             self,
             df,

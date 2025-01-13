@@ -47,6 +47,39 @@ Updated requirements:
 
 
 
+**Updates to implement from discsussion on 13/1:**
+
+1. Graph12: X-Axis Adjustments:
+   - Modify minimum samples for bucket  to be at least 100 or 250 - done
+   - Ensure consistent x-axis scaling across graphs
+   - Add color variations to the graph as of Graph10: Implement orange coloring from bottom
+
+3. Graph 11 Changes:
+   - Fix C3 percentage display issue where it shows 100% without showing lower percentages in green
+   - Add a new column showing averages instead of percentages
+
+4. Graph 70 Modifications:
+   - Show normalized distribution of 'sacrifice' metrics
+   - Compare food vs. consumption patterns
+
+5. Graphs 1 and 3 Corrections:
+   - Review and fix potential error in Graph 3
+   - Update "Deviation" labeling
+
+6. Graph 4 Redesign:
+   - Convert to XY scatter plot format
+
+7. Additional Analysis:
+   - Calculate median values using bucketed data
+
+These changes seem to focus on improving data visualization and statistical analysis. Would you like me to help implement any specific part of these updates? It would be helpful to see the current code and data structure to provide more targeted assistance.
+
+
+
+
+
+
+
 
 **Requirements**
 

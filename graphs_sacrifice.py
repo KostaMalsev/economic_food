@@ -5,7 +5,7 @@ from base_visualizer import BaseVisualizer
 
 class SacrificeVisualizer(BaseVisualizer):
 
-    def create_graph5(self, df, lifestyle, per_capita=False):
+    def create_graph5(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Food Sacrifice Distribution"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -22,7 +22,7 @@ class SacrificeVisualizer(BaseVisualizer):
         metrics = {
             'sacrifice': {
                 'columns': ['sacrifice'],
-                'func': lambda x: x['sacrifice'].mean()
+                'func': lambda x: x['sacrifice'].mean() if aggregation == 'mean' else x['sacrifice'].median()
             },
             'poor_count': {
                 'columns': ['sacrifice'],
@@ -63,7 +63,7 @@ class SacrificeVisualizer(BaseVisualizer):
 
         return plt
 
-    def create_graph6(self, df, lifestyle, per_capita=False):
+    def create_graph6(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Total Expenditure Sacrifice Distribution"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -78,7 +78,7 @@ class SacrificeVisualizer(BaseVisualizer):
         metrics = {
             'sacrifice': {
                 'columns': ['sacrifice'],
-                'func': lambda x: x['sacrifice'].mean()
+                'func': lambda x: x['sacrifice'].mean() if aggregation == 'mean' else x['sacrifice'].median()
             },
             'poor_count': {
                 'columns': ['sacrifice'],

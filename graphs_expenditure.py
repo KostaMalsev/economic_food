@@ -5,32 +5,32 @@ from base_visualizer import BaseVisualizer
 
 class ExpenditureVisualizer(BaseVisualizer):
 
-    def create_graph1(self, df, lifestyle, per_capita=False):
+    def create_graph1(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Food Expenditure vs Total Expenditure Analysis"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
         max_value = 20000
         
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', max_value, 70
+            df, f'c3{suffix}', max_value, min_samples=70
         )
 
         metrics = {
             'food_actual': {
                 'columns': [f'food_actual{suffix}'],
-                'func': lambda x: x[f'food_actual{suffix}'].mean()
+                'func': lambda x: x[f'food_actual{suffix}'].mean() if aggregation == 'mean' else x[f'food_actual{suffix}'].median()
             },
             'food_norm': {
                 'columns': [f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean()
+                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'FoodNorm-{lifestyle}{suffix}'].median()
             },
             'gap': {
                 'columns': [f'food_actual{suffix}', f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'food_actual{suffix}'] - x[f'FoodNorm-{lifestyle}{suffix}']).mean()
+                'func': lambda x: (x[f'food_actual{suffix}'] - x[f'FoodNorm-{lifestyle}{suffix}']).mean() if aggregation == 'mean' else (x[f'food_actual{suffix}'] - x[f'FoodNorm-{lifestyle}{suffix}']).median()
             },
             'c3': {
                 'columns': [f'c3{suffix}'],
-                'func': lambda x: x[f'c3{suffix}'].mean()
+                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else x[f'c3{suffix}'].median()
             }
         }
 
@@ -61,7 +61,7 @@ class ExpenditureVisualizer(BaseVisualizer):
 
         return plt
 
-    def create_graph2(self, df, lifestyle, per_capita=False):
+    def create_graph2(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Total Expenditure vs Upper Poverty Line Comparison"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -73,15 +73,15 @@ class ExpenditureVisualizer(BaseVisualizer):
         metrics = {
             'c3': {
                 'columns': [f'c3{suffix}'],
-                'func': lambda x: x[f'c3{suffix}'].mean()
+                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else x[f'c3{suffix}'].median()
             },
             'zu': {
                 'columns': [f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'ZU-{lifestyle}{suffix}'].mean()
+                'func': lambda x: x[f'ZU-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'ZU-{lifestyle}{suffix}'].median()
             },
             'gap': {
                 'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'c3{suffix}'] - x[f'ZU-{lifestyle}{suffix}']).mean()
+                'func': lambda x: (x[f'c3{suffix}'] - x[f'ZU-{lifestyle}{suffix}']).mean() if aggregation == 'mean' else (x[f'c3{suffix}'] - x[f'ZU-{lifestyle}{suffix}']).median()
             }
         }
 
@@ -105,51 +105,8 @@ class ExpenditureVisualizer(BaseVisualizer):
 
         return plt
 
-    def create_graph3(self, df, lifestyle, per_capita=False):
-        """Food Expenditure vs Food Norm Relationship"""
-        suffix = '_per_capita' if per_capita else ''
-        pop_type = self._get_display_type(per_capita)
 
-        df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'food_actual{suffix}', bucket_size=70
-        )
-
-        metrics = {
-            'food_actual': {
-                'columns': [f'food_actual{suffix}'],
-                'func': lambda x: x[f'food_actual{suffix}'].mean()
-            },
-            'food_norm': {
-                'columns': [f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean()
-            },
-            'difference': {
-                'columns': [f'food_actual{suffix}', f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'food_actual{suffix}'] - x[f'FoodNorm-{lifestyle}{suffix}']).mean()
-            }
-        }
-
-        stats = self.helper.calculate_bucket_stats(
-            df_bucketed, metrics=metrics)
-
-        plt.figure()
-        for col, color, label in [
-            ('food_actual', self.colors[0], 'Food Expenditure'),
-            ('food_norm', self.colors[1], 'Food Norm'),
-            ('difference', self.colors[2], 'Deviation')
-        ]:
-            plt.scatter(stats['food_actual'], stats[col], alpha=0.5,
-                        color=color, label=label)
-
-        plt.xlabel(f'Food Expenditure {pop_type}')
-        plt.ylabel('Value')
-        plt.title(
-            f'Food Expenditure vs Food Norm - {lifestyle.capitalize()} {pop_type}')
-        plt.legend()
-
-        return plt
-
-    def create_graph4(self, df, lifestyle, per_capita=False):
+    def create_graph4(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Poverty Lines Relationship"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -161,15 +118,15 @@ class ExpenditureVisualizer(BaseVisualizer):
         metrics = {
             'zl': {
                 'columns': [f'ZL-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'ZL-{lifestyle}{suffix}'].mean()
+                'func': lambda x: x[f'ZL-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'ZL-{lifestyle}{suffix}'].median()
             },
             'zu': {
                 'columns': [f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'ZU-{lifestyle}{suffix}'].mean()
+                'func': lambda x: x[f'ZU-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'ZU-{lifestyle}{suffix}'].median()
             },
             'norm': {
                 'columns': [f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean()
+                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'FoodNorm-{lifestyle}{suffix}'].median()
             }
         }
 

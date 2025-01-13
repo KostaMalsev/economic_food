@@ -5,7 +5,8 @@ from base_visualizer import BaseVisualizer
 
 
 class DetailedVisualizer(BaseVisualizer):
-    def create_graph9(self, df, lifestyle, per_capita=False):
+    
+    def create_graph9(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Detailed Food Sacrifice Analysis"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -72,7 +73,7 @@ class DetailedVisualizer(BaseVisualizer):
         plt.tight_layout()
         return plt
 
-    def create_graph10(self, df, lifestyle, per_capita=False):
+    def create_graph10(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Modified Detailed Food Sacrifice Analysis with Bucketed Means"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -91,9 +92,9 @@ class DetailedVisualizer(BaseVisualizer):
 
         # Calculate bucket statistics
         bucket_stats = df_sorted.groupby('bucket').agg({
-            'sacrifice': 'mean',
-            f'c3{suffix}': 'mean',
-            'persons_count': 'mean',
+            'sacrifice': aggregation,
+            f'c3{suffix}': aggregation,
+            'persons_count': aggregation,
             'is_poor': 'sum'
         }).reset_index()
 
