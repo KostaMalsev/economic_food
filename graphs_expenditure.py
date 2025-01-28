@@ -106,48 +106,4 @@ class ExpenditureVisualizer(BaseVisualizer):
         return plt
 
 
-    def create_graph4(self, df, lifestyle, per_capita=False, aggregation='mean'):
-        """Poverty Lines Relationship"""
-        suffix = '_per_capita' if per_capita else ''
-        pop_type = self._get_display_type(per_capita)
-        bucket_size = 300
-        df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'ZL-{lifestyle}{suffix}', bucket_size=bucket_size,min_samples=bucket_size
-        )
-
-        metrics = {
-            'zl': {
-                'columns': [f'ZL-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'ZL-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'ZL-{lifestyle}{suffix}'].median()
-            },
-            'zu': {
-                'columns': [f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'ZU-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'ZU-{lifestyle}{suffix}'].median()
-            },
-            'norm': {
-                'columns': [f'FoodNorm-{lifestyle}{suffix}'],
-                'func': lambda x: x[f'FoodNorm-{lifestyle}{suffix}'].mean() if aggregation == 'mean' else x[f'FoodNorm-{lifestyle}{suffix}'].median()
-            }
-        }
-
-        stats = self.helper.calculate_bucket_stats(
-            df_bucketed, metrics=metrics)
-
-        plt.figure()
-        plt.plot(stats['zl'], stats['zu'], alpha=0.5,
-                 color=self.colors[0], label='Upper Poverty Line (ZU)')
-        plt.plot(stats['zl'], stats['norm'], alpha=0.5,
-                 color=self.colors[1], label='Food Norm')
-
-        # Add 3x reference line
-        zl_range = np.array([stats['zl'].min(), stats['zl'].max()])
-        plt.plot(zl_range, 3 * zl_range, '--',
-                 color=self.colors[2], label='3x Reference Line')
-
-        plt.xlabel(f'Lower Poverty Line (ZL) {pop_type}')
-        plt.ylabel('Value')
-        plt.title(
-            f'Poverty Lines Relationship - {lifestyle.capitalize()} {pop_type} bucket-size:{bucket_size}')
-        plt.legend()
-
-        return plt
+    

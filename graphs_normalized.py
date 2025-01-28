@@ -6,8 +6,8 @@ from base_visualizer import BaseVisualizer
 class NormalizedVisualizer(BaseVisualizer):
 
     def create_graph11(self, df, lifestyle, per_capita=False, aggregation='median'):
-        """Food Sufficiency by Total Expenditure (Normalized)"""
-        suffix = '' #_per_capita' if per_capita else ''
+        """Mean Values of Food Sufficiency by Total Expenditure (Normalized)"""
+        suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
 
         df = df.copy()
@@ -25,52 +25,28 @@ class NormalizedVisualizer(BaseVisualizer):
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'c3_pct_diff', bucket_size=100
         )
-        '''
-        metrics = {
-            'food_pct_above_norm': {
-                'columns': ['food_pct_diff'],
-                'func': lambda x: (x['food_pct_diff'] > 0).mean()*100
-            },
-            'c3_pct_diff': {
-                'columns': ['c3_pct_diff'],
-                'func': lambda x: x['c3_pct_diff'].mean()
-            },
-            'food_pct_diff': {
-                'columns': ['food_pct_diff'],
-                'func': lambda x: x['food_pct_diff'].mean()
-            },
-            'count': {
-                'columns': ['c3_pct_diff'],
-                'func': len
-            },
-            'c3_pct_above_zu': {
-                'columns': ['c3_pct_diff'],
-                'func': lambda x: (x['c3_pct_diff'] > 0).mean()*100
-            },
-        }
-        '''
+       
 
         metrics = {
-            'food_pct_above_norm': {
+            'food_pct_diff': {
                 'columns': ['food_pct_diff'],
-                'func': lambda x: (x['food_pct_diff'] > 0).mean()*100
+                'func': lambda x: x['food_pct_diff'].mean()
             },
             'c3_pct_diff': {
                 'columns': ['c3_pct_diff'],
                 'func': lambda x: x['c3_pct_diff'].mean()
             },
-            'food_pct_diff': {
-                'columns': ['food_pct_diff'],
-                'func': lambda x: x['food_pct_diff'].mean()
-            },
             'count': {
                 'columns': ['c3_pct_diff'],
                 'func': len
             },
-            'above_zu': {
-                'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'c3{suffix}'] >
-                                   x[f'ZU-{lifestyle}{suffix}']).mean() * 100 
+            'mean_food_pct_diff': {
+                'columns': ['food_pct_diff'],
+                'func': lambda x: x['food_pct_diff'].mean()
+            },
+            'mean_c3_pct_diff': {
+                'columns': ['c3_pct_diff'],
+                'func': lambda x: x['c3_pct_diff'].mean()
             },
         }
 
@@ -80,38 +56,38 @@ class NormalizedVisualizer(BaseVisualizer):
 
         plt.figure(figsize=(12, 8))
 
-        # Bar plot of percentage above food norm
-        plt.bar(stats['c3_pct_diff'], stats['food_pct_above_norm'],
+        # Bar plot of mean food percentage differences
+        plt.bar(stats['c3_pct_diff'], stats['mean_food_pct_diff'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[0])
-        plt.bar(stats['c3_pct_diff'], stats['above_zu'],
+        plt.bar(stats['c3_pct_diff'], stats['mean_c3_pct_diff'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[1])
 
         # Add annotations
         for _, row in stats.iterrows():
-            plt.annotate(f'{row["food_pct_above_norm"]:.1f}%',
-                         xy=(row['c3_pct_diff'], row['food_pct_above_norm']),
+            plt.annotate(f'{row["mean_food_pct_diff"]:.1f}',
+                         xy=(row['c3_pct_diff'], row['mean_food_pct_diff']),
                          xytext=(0, 5), textcoords='offset points',
                          ha='center', va='bottom', fontsize=8)
 
-            plt.annotate(f'Δ{row["food_pct_diff"] / 100:.1f}',
-                         xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 3),
+            plt.annotate(f'{row["mean_c3_pct_diff"]:.1f}',
+                         xy=(row['c3_pct_diff'], row['mean_c3_pct_diff']),
                          xytext=(0, 2), textcoords='offset points',
                          ha='center', va='bottom', fontsize=6)
             
             plt.annotate(f'({int(row["count"])})',
-                         xy=(row['c3_pct_diff'], row['food_pct_above_norm'] - 5),
+                         xy=(row['c3_pct_diff'], row['mean_food_pct_diff'] - 5),
                          xytext=(0, 1), textcoords='offset points',
                          ha='center', va='bottom', fontsize=6)
         
         # Explanation box
 
         plt.text(0.05, 0.95, 
-                 'Formula used:\nAbove Norm: (FoodActual > FoodNorm)*100\nAbove ZU: (c3 > ZU)*100\nΔ (Delta): (FoodActual - FoodNorm)/FoodNorm\n(N): count of households',
+                 'Formula used:\nMean Food Difference: (FoodActual - FoodNorm)/FoodNorm\nMean C3 Difference: (c3 - ZU)/ZU\n(N): count of households',
                  horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))    
 
         plt.xlabel('Mean % Difference from Upper Poverty Line ((C3-ZU)/ZU)')
-        plt.ylabel('% of Households Above Food Norm')
-        plt.title(f'Food Sufficiency Analysis - {lifestyle.capitalize()}\n'
+        plt.ylabel('Mean % Difference')
+        plt.title(f'Mean Food Sufficiency Analysis - {lifestyle.capitalize()}\n'
                   f'Minimum Bucket Size: {min(stats["count"])} Households')
 
         # Add reference lines

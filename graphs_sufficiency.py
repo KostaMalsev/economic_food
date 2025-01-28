@@ -190,26 +190,30 @@ class SufficiencyVisualizer(BaseVisualizer):
             max_value=7000):
         """
         Plot histograms of food expenditure values for each bucket with normal distribution fit
+        X-axis shows normalized values (c3-zu)/zu where zu is the utility value
         """
-        suffix = '_per_capita' if per_capita else ''
-        pop_type = 'Per Capita' if per_capita else 'Household'
+        suffix = ''#'_per_capita' if per_capita else ''
+        pop_type = 'Household' #'Per Capita' if per_capita else 'Household'
 
         # Create figure with two subplots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12),
                                        gridspec_kw={'height_ratios': [4, 1]})
 
-        # Filter data by max_value first
-        mask = df[f'c3{suffix}'] <= max_value
+        # Calculate normalized x-axis values (c3-zu)/zu
+        df['normalized_c3'] = (df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']) / df[f'ZU-{lifestyle}{suffix}']
+        
+        # Filter data by max_value using normalized values
+        mask = df['normalized_c3'] <= max_value
         df_filtered = df[mask].copy()
 
-        # Use BucketingHelper to create buckets
+        # Use BucketingHelper to create buckets based on normalized values
         bucket_helper = bh.BucketingHelper()
         df_bucketed, bucket_width = bucket_helper.create_fixed_width_buckets(
             df_filtered,
-            value_column=f'c3{suffix}',
+            value_column='normalized_c3',
             max_value=max_value,
-            bucket_size=1000,
-            min_samples=1000
+            bucket_size=300,
+            min_samples=300
         )
 
         # Set up color cycle for different buckets
@@ -240,7 +244,7 @@ class SufficiencyVisualizer(BaseVisualizer):
                 median_food = bucket_data[f'food_actual{suffix}'].median()
                 std_food = bucket_data[f'food_actual{suffix}'].std()
                 n_samples = len(bucket_data)
-                c3_range = f"{bucket_data[f'c3{suffix}'].min():.0f}-{bucket_data[f'c3{suffix}'].max():.0f}"
+                c3_range = f"{bucket_data['normalized_c3'].min():.2f}-{bucket_data['normalized_c3'].max():.2f}"
                 pct_above_norm = (bucket_data[f'food_actual{suffix}'] >
                                   bucket_data[f'FoodNorm-{lifestyle}{suffix}']).mean() * 100
 
@@ -264,7 +268,7 @@ class SufficiencyVisualizer(BaseVisualizer):
 
                 max_smooth = max(y_smooth)
                 max_hist = max(hist)
-                mx = max(max_smooth,max_hist)
+                mx = max(max_smooth, max_hist)
 
                 y_smooth = (y_smooth/max_smooth) * mx
 
@@ -289,9 +293,9 @@ class SufficiencyVisualizer(BaseVisualizer):
                     'c3_range': c3_range
                 })
 
-                # Format legend entry with C3 range
+                # Format legend entry with normalized C3 range
                 legend_stats.append(
-                    f'Bucket {bucket_id} (C3: {c3_range}):\n'
+                    f'Bucket {bucket_id} ((C3-ZU)/ZU: {c3_range}):\n'
                     f'n={n_samples}\n'
                     f'mean={mean_food:.0f}\n'
                     f'median={median_food:.0f}\n'
@@ -308,7 +312,7 @@ class SufficiencyVisualizer(BaseVisualizer):
         ax2.grid(True, alpha=0.3)
 
         # Add annotations and styling to main plot
-        ax1.set_xlabel(f'Food Expenditure {pop_type}')
+        ax1.set_xlabel(f'Food Expenditure {pop_type} ((C3-ZU)/ZU)')
         ax1.set_ylabel('Density')
         ax1.grid(True, alpha=0.3)
 
@@ -318,7 +322,7 @@ class SufficiencyVisualizer(BaseVisualizer):
 
         # Create title with total sample information
         total_samples = sum(stat['n_samples'] for stat in bucket_stats)
-        title = (f'Distribution of Food Expenditure by C3 Bucket\n'
+        title = (f'Distribution of Food Expenditure by Normalized C3 Bucket\n'
                  f'{lifestyle.capitalize()} {pop_type}\n'
                  f'Total Samples: {total_samples}')
         fig.suptitle(title, y=0.95)
