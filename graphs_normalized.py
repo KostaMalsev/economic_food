@@ -94,7 +94,7 @@ class NormalizedVisualizer(BaseVisualizer):
         plt.axvline(x=0, color='red', linestyle='--', alpha=0.7,
                     label='Upper Poverty Line Threshold')
         
-        plt.legend()
+        plt.legend(labels=['Mean Food Percentage Differences', 'Mean C3 Percentage Differences'])
 
         plt.tight_layout()
         return plt
