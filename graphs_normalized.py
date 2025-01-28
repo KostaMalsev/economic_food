@@ -7,7 +7,7 @@ class NormalizedVisualizer(BaseVisualizer):
 
     def create_graph11(self, df, lifestyle, per_capita=False, aggregation='median'):
         """Food Sufficiency by Total Expenditure (Normalized)"""
-        suffix = '_per_capita' if per_capita else ''
+        suffix = '' #_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
 
         df = df.copy()
@@ -17,10 +17,7 @@ class NormalizedVisualizer(BaseVisualizer):
                                 df[f'FoodNorm-{lifestyle}{suffix}']) /
                                df[f'FoodNorm-{lifestyle}{suffix}'] *
                                100)
-        df['c3_pct_diff'] = ((df[f'c3{suffix}'] -
-                              df[f'ZU-{lifestyle}{suffix}']) /
-                             df[f'ZU-{lifestyle}{suffix}'] *
-                             100)
+        df['c3_pct_diff'] = ((df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']) / df[f'ZU-{lifestyle}{suffix}'] * 100)
 
         # Filter extreme values
         df = df[df['c3_pct_diff'] <= 450]
@@ -28,11 +25,11 @@ class NormalizedVisualizer(BaseVisualizer):
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'c3_pct_diff', bucket_size=100
         )
-
+        '''
         metrics = {
             'food_pct_above_norm': {
                 'columns': ['food_pct_diff'],
-                'func': lambda x: (x['food_pct_diff'] > 0).mean() * 100
+                'func': lambda x: (x['food_pct_diff'] > 0).mean()*100
             },
             'c3_pct_diff': {
                 'columns': ['c3_pct_diff'],
@@ -48,9 +45,35 @@ class NormalizedVisualizer(BaseVisualizer):
             },
             'c3_pct_above_zu': {
                 'columns': ['c3_pct_diff'],
-                'func': lambda x: (x['c3_pct_diff'] > 0).mean() * 100
+                'func': lambda x: (x['c3_pct_diff'] > 0).mean()*100
             },
         }
+        '''
+
+        metrics = {
+            'food_pct_above_norm': {
+                'columns': ['food_pct_diff'],
+                'func': lambda x: (x['food_pct_diff'] > 0).mean()*100
+            },
+            'c3_pct_diff': {
+                'columns': ['c3_pct_diff'],
+                'func': lambda x: x['c3_pct_diff'].mean()
+            },
+            'food_pct_diff': {
+                'columns': ['food_pct_diff'],
+                'func': lambda x: x['food_pct_diff'].mean()
+            },
+            'count': {
+                'columns': ['c3_pct_diff'],
+                'func': len
+            },
+            'above_zu': {
+                'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
+                'func': lambda x: (x[f'c3{suffix}'] >
+                                   x[f'ZU-{lifestyle}{suffix}']).mean() * 100 
+            },
+        }
+
 
         stats = self.helper.calculate_bucket_stats(
             df_bucketed, metrics=metrics)
@@ -60,7 +83,7 @@ class NormalizedVisualizer(BaseVisualizer):
         # Bar plot of percentage above food norm
         plt.bar(stats['c3_pct_diff'], stats['food_pct_above_norm'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[0])
-        plt.bar(stats['c3_pct_diff'], stats['c3_pct_above_zu'],
+        plt.bar(stats['c3_pct_diff'], stats['above_zu'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[1])
 
         # Add annotations
@@ -94,8 +117,7 @@ class NormalizedVisualizer(BaseVisualizer):
         # Add reference lines
         plt.axvline(x=0, color='red', linestyle='--', alpha=0.7,
                     label='Upper Poverty Line Threshold')
-        plt.axhline(y=100, color='green', linestyle='--', alpha=0.7,
-                    label='All Above Food Norm')
+        
         plt.legend()
 
         plt.tight_layout()
@@ -104,10 +126,10 @@ class NormalizedVisualizer(BaseVisualizer):
 
 
 
-    def create_graph12(self, df, lifestyle, per_capita=True, aggregation='mean'):
+    def create_graph12(self, df, lifestyle, per_capita=True, aggregation='median'):
         """Sorted Percentage Differences Analysis with Bucket Means"""
-        suffix = '_per_capita'  # Always per capita for this graph
-        
+        #suffix = '_per_capita'  # Always per capita for this graph
+        suffix = ''
         df = df.copy()
         df['food_pct_diff'] = ((df[f'food_actual{suffix}'] - 
                                 df[f'FoodNorm-{lifestyle}{suffix}']) /
