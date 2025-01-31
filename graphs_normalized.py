@@ -57,10 +57,11 @@ class NormalizedVisualizer(BaseVisualizer):
         plt.figure(figsize=(12, 8))
 
         # Bar plot of mean food percentage differences
-        plt.bar(stats['c3_pct_diff'], stats['mean_food_pct_diff'],
-                width=bucket_width * 0.8, alpha=0.6, color=self.colors[0])
         plt.bar(stats['c3_pct_diff'], stats['mean_c3_pct_diff'],
                 width=bucket_width * 0.8, alpha=0.6, color=self.colors[1])
+        plt.bar(stats['c3_pct_diff'], stats['mean_food_pct_diff'],
+                width=bucket_width * 0.8, alpha=1, color=self.colors[0])
+        
 
         # Add annotations
         for _, row in stats.iterrows():
@@ -82,7 +83,7 @@ class NormalizedVisualizer(BaseVisualizer):
         # Explanation box
 
         plt.text(0.05, 0.95, 
-                 'Formula used:\nMean Food Difference: (FoodActual - FoodNorm)/FoodNorm\nMean C3 Difference: (c3 - ZU)/ZU\n(N): count of households',
+                 'Formula used:\nMean Food Difference: (FoodActual - FoodNorm)/FoodNorm\nMean C3 Difference: (c3 - ZU)/ZU\n(N): number of households\n-- all values are per bucket',
                  horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))    
 
         plt.xlabel('Mean % Difference from Upper Poverty Line ((C3-ZU)/ZU)')

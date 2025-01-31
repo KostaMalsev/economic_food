@@ -40,7 +40,7 @@ class SacrificeVisualizer(BaseVisualizer):
 
         # Plot sorted sacrifice values
         plt.plot(range(len(sorted_sacrifice)), sorted_sacrifice,
-                 color=self.colors[0], label='Food Sacrifice')
+                 color=self.colors[0], label='Food Sacrifice (FoodActual - FoodNorm)')
 
         plt.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Zero Point (No Sacrifice)')
@@ -96,7 +96,7 @@ class SacrificeVisualizer(BaseVisualizer):
 
         # Plot sorted sacrifice values
         plt.plot(range(len(sorted_sacrifice)), sorted_sacrifice,
-                 color=self.colors[0], label='Total Expenditure Sacrifice')
+                 color=self.colors[0], label='Total Expenditure Sacrifice (C3-Zu)')
 
         plt.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Zero Point (No Sacrifice)')

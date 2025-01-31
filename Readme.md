@@ -4,7 +4,7 @@
 ## Core Files
 - `bucketing_helper.py`: Contains the BucketingHelper class for consistent data bucketing and statistics calculations
 - `base_visualizer.py`: Base visualization class with common functionality
-- `graphs_expenditure.py`: ExpenditureVisualizer for graphs 1-4 (expenditure analysis), removed graph 4
+- `graphs_expenditure.py`: ExpenditureVisualizer for graphs 1,2,13 (expenditure analysis),
 - `graphs_sacrifice.py`: SacrificeVisualizer for graphs 5-6 (sacrifice analysis)
 - `graphs_sufficiency.py`: SufficiencyVisualizer for graphs 7-8 (sufficiency analysis)
 - `graphs_detailed.py`: DetailedVisualizer for graphs 9-10 (detailed analysis)

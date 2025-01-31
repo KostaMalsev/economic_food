@@ -13,9 +13,9 @@ class SufficiencyVisualizer(BaseVisualizer):
         """Food Sufficiency Analysis by Income Level"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
-
+        bucket_size = 70
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', max_value=40000, bucket_size=70
+            df, f'c3{suffix}', max_value=40000, bucket_size=bucket_size,min_samples=bucket_size
         )
 
         metrics = {
@@ -56,13 +56,14 @@ class SufficiencyVisualizer(BaseVisualizer):
         width = bucket_width * 0.4
 
         # Plot percentages
-        plt.bar(stats['c3_mean'], stats['above_norm'],
-                width=width, alpha=0.6, color=self.colors[0],
-                label='Above Food Norm')
         plt.bar(stats['c3_mean'] + width, stats['above_zu'],
                 width=width, alpha=0.6, color=self.colors[1],
                 label='Above C3^')
-
+        plt.bar(stats['c3_mean'], stats['above_norm'],
+                width=width, alpha=0.6, color=self.colors[0],
+                label='Above Food Norm')
+        
+        
         # Add trend lines
         for y_col, color, label in [
             ('above_norm', self.colors[2], 'Food Norm Trend'),
@@ -88,87 +89,13 @@ class SufficiencyVisualizer(BaseVisualizer):
 
         # Explanation box
         plt.text(0.05, 0.95, 
-                 'Formula used:\nAbove Norm: (FoodActual > Food Norm) * 100\nAbove ZU: (c3 > ZU) * 100\nΔ (Delta): (c3 - ZU)\nN: count of households',
+                 '*Percentage of housholds where FoodActual > FoodNorm\n*Percentage of housholds where C3 > Zu\n*Δ (Delta): (c3 - ZU)\n*N: number of households\n--all values are per bucket',
                  horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))
 
         plt.xlabel(f'Total Expenditure (c3) {pop_type}')
         plt.ylabel('Percentage of households above threshold')
         plt.title(
-            f'Food Sufficiency Analysis - {lifestyle.capitalize()} {pop_type}')
-        plt.legend()
-
-        # Adjust y-axis to accommodate labels
-        plt.ylim(-15, plt.ylim()[1] + 10)
-        plt.tight_layout()
-
-        return plt
-
-    def create_graph8(self, df, lifestyle, per_capita=False, aggregation='median'):
-        """Expenditure Adequacy Analysis"""
-        suffix = '_per_capita' if per_capita else ''
-        pop_type = self._get_display_type(per_capita)
-
-        df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', max_value=20000, bucket_size=70
-        )
-
-        metrics = {
-            'above_zu': {
-                'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'c3{suffix}'] >
-                                   x[f'ZU-{lifestyle}{suffix}']).mean() * 100
-            },
-            'mean_gap': {
-                'columns': [f'c3{suffix}', f'ZU-{lifestyle}{suffix}'],
-                'func': lambda x: (x[f'c3{suffix}'] -
-                                   x[f'ZU-{lifestyle}{suffix}']).mean()
-            },
-            'c3_mean': {
-                'columns': [f'c3{suffix}'],
-                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else x[f'c3{suffix}'].median()
-            },
-            'count': {
-                'columns': [f'c3{suffix}'],
-                'func': len
-            }
-        }
-
-        stats = self.helper.calculate_bucket_stats(
-            df_bucketed, metrics=metrics)
-
-        plt.figure()
-
-        # Plot percentages
-        plt.bar(stats['c3_mean'], stats['above_zu'],
-                width=bucket_width * 0.8, alpha=0.6, color=self.colors[0],
-                label='Above Upper Poverty Line (ZU)')
-
-        # Add trend line
-        z = np.polyfit(stats['c3_mean'], stats['above_zu'], 2)
-        p = np.poly1d(z)
-        x_trend = np.linspace(stats['c3_mean'].min(),
-                              stats['c3_mean'].max(), 100)
-        plt.plot(x_trend, p(x_trend), '--', color='red',
-                 label='Trend')
-
-        # Add labels
-        for _, row in stats.iterrows():
-            plt.text(row['c3_mean'], row['above_zu'] + 2,
-                     f'{row["above_zu"]:.1f}%\nΔ={row["mean_gap"]:.1f}',
-                     ha='center', va='bottom', fontsize=8)
-            plt.text(row['c3_mean'], -5,
-                     f'N={int(row["count"])}',
-                     ha='center', va='top', fontsize=7)
-        
-        # Explanation box
-        plt.text(0.05, 0.95, 
-                 'Formula used:\nAbove ZU: (c3 > ZU) * 100\n C3: C3 \nN: count of households',
-                 horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))
-        
-        plt.xlabel(f'Total Expenditure (c3) {pop_type}')
-        plt.ylabel('Percentage Above Upper Poverty Line')
-        plt.title(
-            f'Expenditure Adequacy Analysis - {lifestyle.capitalize()} {pop_type}')
+            f'Food Sufficiency Analysis - {lifestyle.capitalize()} {pop_type}, bucket size:{bucket_size}')
         plt.legend()
 
         # Adjust y-axis to accommodate labels
