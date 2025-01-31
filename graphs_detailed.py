@@ -135,7 +135,7 @@ class DetailedVisualizer(BaseVisualizer):
                          bucket_stats[f'c3{suffix}'],
                          color='green',
                          linewidth=2,
-                         label='Mean Total Expenditure (c3)')
+                         label=f'{aggregation} total expenditure (c3)')
         line3 = ax3.plot(
             bucket_stats['bucket_center'],
             bucket_stats['persons_count'],
@@ -154,14 +154,14 @@ class DetailedVisualizer(BaseVisualizer):
         ax3.tick_params(axis='y', labelcolor='blue')
 
         plt.title(
-            f'Detailed Food Sacrifice Analysis - {lifestyle.capitalize()} {pop_type}\n' f'Bucket Size: {bucket_size} Households')
+            f'Food Sacrifice Analysis - {lifestyle.capitalize()} {pop_type}\n' f'Bucket Size: {bucket_size} Households')
 
         # Combine legends
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         lines3, labels3 = ax3.get_legend_handles_labels()
         ax1.legend(lines1 + line2 + line3,
-                   labels1 + ['Mean Total Expenditure (c3)', 'Mean Household Size'],
+                   labels1 + [f'{aggregation} total expenditure (c3)', f'{aggregation} household size'],
                    loc='upper left', bbox_to_anchor=(1.15, 1))
 
         plt.tight_layout()

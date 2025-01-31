@@ -102,7 +102,7 @@ class NormalizedVisualizer(BaseVisualizer):
 
 
 
-    def create_graph12(self, df, lifestyle, per_capita=True, aggregation='median'):
+    def create_graph12(self, df, lifestyle, per_capita=True, aggregation='mean'):
         """Sorted Percentage Differences Analysis with Bucket Means"""
         #suffix = '_per_capita'  # Always per capita for this graph
         suffix = ''
@@ -116,7 +116,7 @@ class NormalizedVisualizer(BaseVisualizer):
                             df[f'ZU-{lifestyle}{suffix}'] * 
                             100)
         
-        bucket_size = 150
+        bucket_size = 250
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'food_pct_diff', bucket_size=bucket_size, min_samples=bucket_size
         )

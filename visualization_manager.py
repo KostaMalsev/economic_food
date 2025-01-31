@@ -5,6 +5,7 @@ from graphs_detailed import DetailedVisualizer
 from graphs_normalized import NormalizedVisualizer
 
 
+
 class VisualizationManager:
     def __init__(self, save_dir='./graphs/'):
         """Initialize visualization manager with all visualizers"""
@@ -31,6 +32,7 @@ class VisualizationManager:
             10: 'detailed',
             11: 'normalized',
             12: 'normalized',
+            13: 'expenditure',
             70: 'sufficiency',
         }
 
@@ -58,7 +60,7 @@ class VisualizationManager:
                 metric_type = 'per_capita' if per_capita else 'household'
                 print(f"\nGenerating {metric_type} metrics:")
 
-                for graph_num in list(range(1,5)): #list(range(1,13)) + [70]:  
+                for graph_num in [13]:#(list(range(1,13)) + [70]):  
                     print(f"  Creating graph {graph_num}...")
                     
                     try:
