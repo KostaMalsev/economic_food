@@ -12,8 +12,7 @@ class SacrificeVisualizer(BaseVisualizer):
 
         # Calculate food sacrifice
         df = df.copy()
-        df['sacrifice'] = (df[f'food_actual{suffix}'] -
-                           df[f'FoodNorm-{lifestyle}{suffix}'])
+        df['sacrifice'] = (df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}'])
 
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'sacrifice', bucket_size=1
@@ -26,7 +25,7 @@ class SacrificeVisualizer(BaseVisualizer):
             },
             'poor_count': {
                 'columns': ['sacrifice'],
-                'func': lambda x: (x['sacrifice'] < 0).sum()
+                'func': lambda x: (x['sacrifice'] > 0).sum()
             }
         }
 
@@ -40,7 +39,7 @@ class SacrificeVisualizer(BaseVisualizer):
 
         # Plot sorted sacrifice values
         plt.plot(range(len(sorted_sacrifice)), sorted_sacrifice,
-                 color=self.colors[0], label='Food Sacrifice (FoodActual - FoodNorm)')
+                 color=self.colors[0], label='Food Sacrifice (FoodNorm - FoodActual)')
 
         plt.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Zero Point (No Sacrifice)')
@@ -51,12 +50,12 @@ class SacrificeVisualizer(BaseVisualizer):
             alpha=0.3,
             label=f'Sacrifice Line ({sacrificing_pct:.1f}% households)')
 
-        plt.fill_between(range(sacrificing),
-                         sorted_sacrifice[:sacrificing],
-                         0, color='red', alpha=0.1, label='Food Sacrificing')
+        plt.fill_between(range(len(sorted_sacrifice)),
+                         sorted_sacrifice,
+                         0, where=sorted_sacrifice > 0, color='red', alpha=0.1, label='Food Sacrificing')
 
         plt.xlabel('Households (Ordered by Food Sacrifice)')
-        plt.ylabel(f'Food Expenditure - Food Norm {pop_type}')
+        plt.ylabel(f'Food Norm - Food Expenditure{pop_type}')
         plt.title(
             f'Household Food Sacrifice Distribution - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
@@ -69,7 +68,7 @@ class SacrificeVisualizer(BaseVisualizer):
         pop_type = self._get_display_type(per_capita)
 
         df = df.copy()
-        df['sacrifice'] = df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']
+        df['sacrifice'] =  df[f'ZU-{lifestyle}{suffix}'] - df[f'c3{suffix}']
 
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'sacrifice', bucket_size=1
@@ -91,12 +90,12 @@ class SacrificeVisualizer(BaseVisualizer):
         sorted_sacrifice = np.sort(stats['sacrifice'])
 
         plt.figure()
-        sacrificing = (sorted_sacrifice < 0).sum()
+        sacrificing = (sorted_sacrifice > 0).sum()
         sacrificing_pct = (sacrificing / len(sorted_sacrifice)) * 100
 
         # Plot sorted sacrifice values
         plt.plot(range(len(sorted_sacrifice)), sorted_sacrifice,
-                 color=self.colors[0], label='Total Expenditure Sacrifice (C3-Zu)')
+                 color=self.colors[0], label='Total Expenditure Sacrifice (Zu-C3)')
 
         plt.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Zero Point (No Sacrifice)')
@@ -107,9 +106,10 @@ class SacrificeVisualizer(BaseVisualizer):
             alpha=0.3,
             label=f'Sacrifice Line ({sacrificing_pct:.1f}% households)')
 
-        plt.fill_between(range(sacrificing),
-                         sorted_sacrifice[:sacrificing],
+        plt.fill_between(range(len(sorted_sacrifice)),
+                         sorted_sacrifice,
                          0,
+                         where=sorted_sacrifice > 0,
                          color='red',
                          alpha=0.1,
                          label='Expenditure Sacrificing')

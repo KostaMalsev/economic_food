@@ -13,8 +13,7 @@ class DetailedVisualizer(BaseVisualizer):
 
         # Calculate food sacrifice
         df = df.copy()
-        df['sacrifice'] = (df[f'food_actual{suffix}'] -
-                           df[f'FoodNorm-{lifestyle}{suffix}'])
+        df['sacrifice'] = (df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}'])
 
         # Create buckets based on sacrifice
         df_sorted = df.sort_values('sacrifice')
@@ -25,7 +24,7 @@ class DetailedVisualizer(BaseVisualizer):
             15, 15), sharex=True, height_ratios=[3, 1, 1])
 
         # Plot 1: Food sacrifice
-        sacrificing = (df_sorted['sacrifice'] < 0).sum()
+        sacrificing = (df_sorted['sacrifice'] > 0).sum()
         sacrificing_pct = (sacrificing / len(df_sorted)) * 100
 
         ax1.scatter(
@@ -42,9 +41,7 @@ class DetailedVisualizer(BaseVisualizer):
                     label=f'Sacrifice Line ({sacrificing_pct:.1f}%)')
 
         # Fill area for food sacrificing households
-        ax1.fill_between(range(sacrificing),
-                         df_sorted['sacrifice'].iloc[:sacrificing],
-                         0, color='red', alpha=0.1, label='Food Sacrificing')
+        ax1.fill_between(df_sorted['bucket_index'], df_sorted['sacrifice'], 0, where=df_sorted['sacrifice'] > 0, color='red', alpha=0.1, label='Food Sacrificing')
 
         # Plot 2: Total expenditure
         ax2.scatter(df_sorted['bucket_index'], df_sorted[f'c3{suffix}'],
@@ -79,9 +76,8 @@ class DetailedVisualizer(BaseVisualizer):
         pop_type = self._get_display_type(per_capita)
 
         df = df.copy()
-        df['sacrifice'] = (df[f'food_actual{suffix}'] -
-                           df[f'FoodNorm-{lifestyle}{suffix}'])
-        df['is_poor'] = df['sacrifice'] < 0
+        df['sacrifice'] = (df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}'])
+        df['is_poor'] = df['sacrifice'] > 0
 
         # Create buckets based on sacrifice
         df_sorted = df.sort_values('sacrifice')
@@ -112,9 +108,9 @@ class DetailedVisualizer(BaseVisualizer):
         poor_pct = (poor_households / len(df)) * 100
 
         # Plot shaded region for poor households
-        ax1.fill_between(range(poor_households),
-                         df_sorted['sacrifice'].iloc[:poor_households],
-                         0, color='red', alpha=0.1,
+        ax1.fill_between(range(len(df_sorted)),
+                         df_sorted['sacrifice'],
+                         0, where=df_sorted['sacrifice'] > 0, color='red', alpha=0.1,
                          label=f'Poor Households ({poor_pct:.1f}%)')
 
         # Plot sacrifice points with different colors based on poverty status

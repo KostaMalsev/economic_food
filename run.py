@@ -153,6 +153,41 @@ class FamilyGroupAnalyzer:
             "50+ min1", "50+ min2"
         ]
         return sum(row[col] for col in children_columns)
+    
+    def calculate_mean_age(self, row):
+        age_columns = [
+            "0 -4 min1", "0 -4 min2",
+            "5 - 9 min1", "5 - 9 min2",
+            "10-14 min1", "10-14 min2",
+            "15 - 17 min1", "15 - 17 min2",
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
+            "50+ min1", "50+ min2"
+        ]
+        total_age = sum(
+            (int(age_range.split('-')[0]) + int(age_range.split('-')[1])) / 2 * row[col] 
+            if '-' in age_range else 50 * row[col]
+            for col, age_range in zip(age_columns, ["0-4", "0-4", "5-9", "5-9", "10-14", "10-14", "15-17", "15-17", "18-29", "18-29", "30-49", "30-49", "50+", "50+"])
+        )
+        total_persons = sum(row[col] for col in age_columns)
+        if total_persons == 0:
+            return 0
+        return total_age / total_persons
+    
+    def count_women(self, row):
+        
+        """Calculate the number of women in the household"""
+        age_columns = [
+            "0 -4 min1", "0 -4 min2",
+            "5 - 9 min1", "5 - 9 min2",
+            "10-14 min1", "10-14 min2",
+            "15 - 17 min1", "15 - 17 min2",
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
+            "50+ min1", "50+ min2"
+        ]
+        women_count = sum(row[col] for col in age_columns if "min1" in col and ("18" in col or "30" in col or "50" in col))
+        return women_count
 
     def process_dataframe(self):
         """Process dataframe to calculate required metrics"""
@@ -175,6 +210,16 @@ class FamilyGroupAnalyzer:
                 row, False), axis=1)
         self.df['ZL-sedentary'] = self.df.apply(
             lambda row: self.calculate_zl(row, True), axis=1)
+        
+        # Calculate number of women in each household
+        self.df['number_of_women'] = self.df.apply(
+            lambda row: self.count_women(row), axis=1)
+        print("Calculated number of women in each household")
+
+        # Calculate mean age of each household
+        self.df['mean_age'] = self.df.apply(
+            lambda row: self.calculate_mean_age(row), axis=1)
+        print("Calculated mean age of each household")
 
         # Calculate ZU (c^3) for active and sedentary
         self.df['ZU-active'] = self.df.apply(

@@ -13,11 +13,11 @@ class NormalizedVisualizer(BaseVisualizer):
         df = df.copy()
 
         # Calculate normalized differences
-        df['food_pct_diff'] = ((df[f'food_actual{suffix}'] -
-                                df[f'FoodNorm-{lifestyle}{suffix}']) /
+        df['food_pct_diff'] = ((
+                                df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}']) /
                                df[f'FoodNorm-{lifestyle}{suffix}'] *
                                100)
-        df['c3_pct_diff'] = ((df[f'c3{suffix}'] - df[f'ZU-{lifestyle}{suffix}']) / df[f'ZU-{lifestyle}{suffix}'] * 100)
+        df['c3_pct_diff'] = ((df[f'ZU-{lifestyle}{suffix}'] - df[f'c3{suffix}']) / df[f'ZU-{lifestyle}{suffix}'] * 100)
 
         # Filter extreme values
         df = df[df['c3_pct_diff'] <= 450]
@@ -83,10 +83,10 @@ class NormalizedVisualizer(BaseVisualizer):
         # Explanation box
 
         plt.text(0.05, 0.95, 
-                 'Formula used:\nMean Food Difference: (FoodActual - FoodNorm)/FoodNorm\nMean C3 Difference: (c3 - ZU)/ZU\n(N): number of households\n-- all values are per bucket',
+                 'Formula used:\nMean Food Difference: (FoodNorm - FoodActual)/FoodNorm\nMean C3 Difference: (Zu - C3)/ZU\n(N): number of households\n-- all values are per bucket',
                  horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8, bbox=dict(facecolor='white', alpha=0.5))    
 
-        plt.xlabel('Mean % Difference from Upper Poverty Line ((C3-ZU)/ZU)')
+        plt.xlabel('Mean % Difference from Upper Poverty Line ((Zu-C3)/ZU)')
         plt.ylabel('Mean % Difference')
         plt.title(f'Mean Food Sufficiency Analysis - {lifestyle.capitalize()}\n'
                   f'Minimum Bucket Size: {min(stats["count"])} Households')
@@ -108,12 +108,11 @@ class NormalizedVisualizer(BaseVisualizer):
         #suffix = '_per_capita'  # Always per capita for this graph
         suffix = ''
         df = df.copy()
-        df['food_pct_diff'] = ((df[f'food_actual{suffix}'] - 
-                                df[f'FoodNorm-{lifestyle}{suffix}']) /
+        df['food_pct_diff'] = ((df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}'] ) /
                             df[f'FoodNorm-{lifestyle}{suffix}'] * 
                             100)
-        df['c3_pct_diff'] = ((df[f'c3{suffix}'] - 
-                            df[f'ZU-{lifestyle}{suffix}']) /
+        df['c3_pct_diff'] = ((
+                            df[f'ZU-{lifestyle}{suffix}'] - df[f'c3{suffix}'] ) /
                             df[f'ZU-{lifestyle}{suffix}'] * 
                             100)
         
