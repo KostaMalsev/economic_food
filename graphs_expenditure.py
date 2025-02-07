@@ -37,8 +37,8 @@ class ExpenditureVisualizer(BaseVisualizer):
                 'func': lambda x: x['mean_age'].mean()
             },
             'women_p': {
-                'columns': ['number_of_women', 'persons_count'],
-                'func': lambda x: (x['number_of_women'].sum() / x['persons_count'].sum()) * 100
+                'columns': ['number_of_women', 'adults'],
+                'func': lambda x: (x['number_of_women'].sum() / x['adults'].sum()) * 100
             },
             'households': {
                 'columns': [],

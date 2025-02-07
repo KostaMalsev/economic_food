@@ -143,16 +143,18 @@ class FamilyGroupAnalyzer:
         ]
         return sum(row[col] for col in age_columns)
 
-    def calculate_children_under_10(self, row):
-        """Calculate number of children under 10 years old in household"""
-        children_columns = [
+    def adults(self, row):
+        """Calculate number of adults in household"""
+        adults_columns = [
             # "0 -4 min1", "0 -4 min2",    # 0-4 years
             # "5 - 9 min1", "5 - 9 min2",  # 5-9 years
             # "10-14 min1", "10-14 min2",  # 10-14 years
             # "15 - 17 min1", "15 - 17 min2"  # 15-17 years
+            "18 -29 min1", "18 -29 min2",
+            "30 - 49 min1", "30 - 49 min2",
             "50+ min1", "50+ min2"
         ]
-        return sum(row[col] for col in children_columns)
+        return sum(row[col] for col in adults_columns)
     
     def calculate_mean_age(self, row):
         age_columns = [
@@ -200,8 +202,8 @@ class FamilyGroupAnalyzer:
         self.df['persons_count'] = self.df.apply(
             self.calculate_persons_count, axis=1)
         # Calculate number of children under 10
-        self.df['children_under_10'] = self.df.apply(
-            self.calculate_children_under_10, axis=1)
+        self.df['adults'] = self.df.apply(
+            self.adults, axis=1)
         print("Calculated household sizes and children counts")
 
         # Calculate ZL for both active and sedentary
