@@ -186,7 +186,7 @@ class FamilyGroupAnalyzer:
             "30 - 49 min1", "30 - 49 min2",
             "50+ min1", "50+ min2"
         ]
-        women_count = sum(row[col] for col in age_columns if "min1" in col and ("18" in col or "30" in col or "50" in col))
+        women_count = sum(row[col] for col in age_columns if "min2" in col and ("18" in col or "30" in col or "50" in col))
         return women_count
 
     def process_dataframe(self):
