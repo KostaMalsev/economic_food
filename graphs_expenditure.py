@@ -6,7 +6,7 @@ from scipy.optimize import root_scalar
 
 class ExpenditureVisualizer(BaseVisualizer):
 
-    def create_graph1(self, df, lifestyle, per_capita=False, aggregation='median'):
+    def create_graph1(self, df, lifestyle, per_capita=False, aggregation='mean'):
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
         max_value = 20000
@@ -54,19 +54,19 @@ class ExpenditureVisualizer(BaseVisualizer):
         for col, color, label in [
             ('food_actual', self.colors[0], 'Food Expenditure'),
             ('food_norm', self.colors[1], 'Food Norm'),
-            ('gap', self.colors[2], 'Gap')
+            ('gap', self.colors[2], 'Food sacrifice: "FoodNorm - Food expenditure')
         ]:
             ax1.scatter(stats['c3'], stats[col], s=20, alpha=0.6, color=color, label=label)
             z = np.polyfit(stats['c3'], stats[col], 1)
             p = np.poly1d(z)
             ax1.plot(stats['c3'], p(stats['c3']), '--', color=color, alpha=0.8)
 
-        positive_gap_households = sum(
-            df_bucketed[df_bucketed[f'c3{suffix}'].between(bucket_start, bucket_end)].shape[0]
+        under_buckets = sum(
+            1
             for bucket_start, bucket_end in zip(stats['c3'][:-1], stats['c3'][1:])
-            if stats['gap'][stats['c3'].tolist().index(bucket_start)] > 0
+            if stats['gap'][stats['c3'].tolist().index(bucket_start)] < 0
         )
-        ax1.text(0.95, 0.95, f'Number of poor households: {positive_gap_households}',
+        ax1.text(0.95, 0.95, f'Percent of poor buckets of households: {under_buckets / len(stats["c3"]) * 100:.1f}%',
                 ha='right', va='top', transform=ax1.transAxes)
 
         ax1.set_xlabel(f'Total Expenditure (c3) {pop_type}')
@@ -99,7 +99,9 @@ class ExpenditureVisualizer(BaseVisualizer):
 
         return fig
 
-    def create_graph2(self, df, lifestyle, per_capita=False, aggregation='median'):
+
+
+    def create_graph2(self, df, lifestyle, per_capita=False, aggregation='mean'):
         """Total Expenditure vs Upper Poverty Line Comparison"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -130,18 +132,18 @@ class ExpenditureVisualizer(BaseVisualizer):
         for col, color, label in [
             ('c3', self.colors[0], 'Total Expenditure (c3)'),
             ('zu', self.colors[1], 'Upper Poverty Line (ZU)'),
-            ('gap', self.colors[2], 'Gap')
+            ('gap', self.colors[2], 'Expenditure sacrifice: Zu-C3')
         ]:
             plt.scatter(stats['c3'], stats[col], alpha=0.5,
                         color=color, label=label)
 
         # Calculate and add label for positive gap households
-        positive_gap_households = sum(
-            df_bucketed[df_bucketed[f'c3{suffix}'].between(bucket_start, bucket_end)].shape[0] 
+        buckets_under = sum(
+            1 
             for bucket_start, bucket_end in zip(stats['c3'][:-1], stats['c3'][1:]) 
-            if stats['gap'][stats['c3'].tolist().index(bucket_start)] > 0 
+            if stats['gap'][stats['c3'].tolist().index(bucket_start)] < 0 
             )
-        plt.text(0.95, 0.95, f'Number of poor households: {positive_gap_households}', ha='right', va='top', transform=plt.gca().transAxes)
+        plt.text(0.95, 0.95, f'Percent of poor households: {buckets_under / len(stats["c3"]) * 100:.1f}%', ha='right', va='top', transform=plt.gca().transAxes)
 
         plt.xlabel(f'Total Expenditure (c3) {pop_type}')
         plt.ylabel('Value')
@@ -268,5 +270,6 @@ class ExpenditureVisualizer(BaseVisualizer):
         plt.ylabel('Food Expenditure')
         plt.title(f'Food Expenditure vs Total Expenditure - {lifestyle.capitalize()} {pop_type}')
         plt.legend()
+        plt.ylim(0, 2500)
         
         return plt

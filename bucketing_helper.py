@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import inspect
 
 class BucketingHelper:
     @staticmethod
@@ -34,6 +34,12 @@ class BucketingHelper:
             df = df[df[value_column] <= max_value].copy()
         else:
             df = df.copy()
+
+        #store the bucket sizes for each call:
+        
+        caller_function_name = inspect.stack()[1][3]
+        with open('buckets.csv', 'a') as file:
+            file.write(f'{caller_function_name},{bucket_size},{min_samples}\n')
 
         # Sort data and get range
         df = df.sort_values(value_column)

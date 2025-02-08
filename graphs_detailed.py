@@ -6,7 +6,7 @@ from base_visualizer import BaseVisualizer
 
 class DetailedVisualizer(BaseVisualizer):
     
-    def create_graph9(self, df, lifestyle, per_capita=False, aggregation='median'):
+    def create_graph9(self, df, lifestyle, per_capita=False, aggregation='mean'):
         """Detailed Food Sacrifice Analysis"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
@@ -24,7 +24,7 @@ class DetailedVisualizer(BaseVisualizer):
             15, 15), sharex=True, height_ratios=[3, 1, 1])
 
         # Plot 1: Food sacrifice
-        sacrificing = (df_sorted['sacrifice'] > 0).sum()
+        sacrificing = (df_sorted['sacrifice'] < 0).sum()
         sacrificing_pct = (sacrificing / len(df_sorted)) * 100
 
         ax1.scatter(
@@ -41,7 +41,7 @@ class DetailedVisualizer(BaseVisualizer):
                     label=f'Sacrifice Line ({sacrificing_pct:.1f}%)')
 
         # Fill area for food sacrificing households
-        ax1.fill_between(df_sorted['bucket_index'], df_sorted['sacrifice'], 0, where=df_sorted['sacrifice'] > 0, color='red', alpha=0.1, label='Food Sacrificing')
+        ax1.fill_between(df_sorted['bucket_index'], df_sorted['sacrifice'], 0, where=df_sorted['sacrifice'] < 0, color='red', alpha=0.1, label='Food Sacrifice')
 
         # Plot 2: Total expenditure
         ax2.scatter(df_sorted['bucket_index'], df_sorted[f'c3{suffix}'],
@@ -70,95 +70,164 @@ class DetailedVisualizer(BaseVisualizer):
         plt.tight_layout()
         return plt
 
-    def create_graph10(self, df, lifestyle, per_capita=False, aggregation='median'):
-        """Modified Detailed Food Sacrifice Analysis with Bucketed Means"""
+
+    def create_graph10(self, df, lifestyle, per_capita=False, aggregation='mean'):
+        """Modified Detailed Food Sacrifice Analysis with Bucketed Means using metrics dictionary"""
         suffix = '_per_capita' if per_capita else ''
         pop_type = self._get_display_type(per_capita)
-
+        
+        # Create a copy and calculate sacrifice
         df = df.copy()
-        df['sacrifice'] = (df[f'FoodNorm-{lifestyle}{suffix}'] - df[f'food_actual{suffix}'])
-        df['is_poor'] = df['sacrifice'] > 0
-
-        # Create buckets based on sacrifice
-        df_sorted = df.sort_values('sacrifice')
-        bucket_size = 250
-        n_buckets = len(df_sorted) // bucket_size
-        df_sorted['bucket'] = pd.qcut(
-            range(len(df_sorted)), n_buckets, labels=False)
-
+        df['sacrifice'] = (-df[f'FoodNorm-{lifestyle}{suffix}'] + df[f'food_actual{suffix}'])
+        df['is_poor'] = df['sacrifice'] < 0
+        
+        # Create fixed-width buckets
+        bucket_size = 70
+        df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
+            df, 'sacrifice', bucket_size=bucket_size, min_samples=bucket_size
+        )
+        
+        # Define metrics dictionary
+        metrics = {
+            'sacrifice': {
+                'columns': ['sacrifice'],
+                'func': lambda x: x['sacrifice'].mean() if aggregation == 'mean' else x['sacrifice'].median()
+            },
+            'c3': {
+                'columns': [f'c3{suffix}'],
+                'func': lambda x: x[f'c3{suffix}'].mean() if aggregation == 'mean' else x[f'c3{suffix}'].median()
+            },
+            'household_size': {
+                'columns': ['persons_count'],
+                'func': lambda x: x['persons_count'].mean() if aggregation == 'mean' else x['persons_count'].median()
+            },
+            'age': {
+                'columns': ['mean_age'],
+                'func': lambda x: x['mean_age'].mean() if aggregation == 'mean' else x['mean_age'].median()
+            },
+            'poor_count': {
+                'columns': ['is_poor'],
+                'func': lambda x: x['is_poor'].sum()
+            },
+            'sample_count': {
+                'columns': ['sacrifice'],
+                'func': lambda x: len(x)
+            }
+        }
+        
         # Calculate bucket statistics
-        bucket_stats = df_sorted.groupby('bucket').agg({
-            'sacrifice': aggregation,
-            f'c3{suffix}': aggregation,
-            'persons_count': aggregation,
-            'is_poor': 'sum'
-        }).reset_index()
-
-        bucket_stats['bucket_center'] = bucket_stats['bucket'] * \
-            bucket_size + bucket_size / 2
-
-        # Create plot with three y-axes
+        stats = self.helper.calculate_bucket_stats(df_bucketed, metrics=metrics)
+        
+        # Calculate cumulative households for x-axis
+        stats['cumulative_households'] = stats['sample_count'].cumsum()
+        
+        # Create plot with four y-axes
         fig, ax1 = plt.subplots(figsize=(15, 8))
         ax2 = ax1.twinx()
         ax3 = ax1.twinx()
+        ax4 = ax1.twinx()
+        
+        # Set positions for multiple right y-axes
         ax3.spines['right'].set_position(('outward', 60))
-
+        ax4.spines['right'].set_position(('outward', 120))
+        
         # Calculate poverty statistics
         poor_households = df['is_poor'].sum()
         poor_pct = (poor_households / len(df)) * 100
-
-        # Plot shaded region for poor households
-        ax1.fill_between(range(len(df_sorted)),
-                         df_sorted['sacrifice'],
-                         0, where=df_sorted['sacrifice'] > 0, color='red', alpha=0.1,
-                         label=f'Poor Households ({poor_pct:.1f}%)')
-
-        # Plot sacrifice points with different colors based on poverty status
-        poor_mask = df_sorted['is_poor']
-        households = range(len(df_sorted))
-
-        ax1.scatter(households, df_sorted['sacrifice'],
-                    c=poor_mask.map({True: 'red', False: 'purple'}),
+        
+        # Use cumulative households for x-axis positions
+        bucket_centers = stats['cumulative_households']
+        
+        # Add shaded regions for poor households
+        legend_added = False
+        for i, row in stats.iterrows():
+            if row['sacrifice'] < 0:
+                label = f'Poor Households ({poor_pct:.1f}%)' if not legend_added else None
+                ax1.fill_betweenx([min(0, row['sacrifice']), 0],
+                                bucket_centers[i] - bucket_size/2,
+                                bucket_centers[i] + bucket_size/2,
+                                color='red', alpha=0.1, label=label)
+                legend_added = True
+        
+        # Calculate y-axis limits considering both food sacrifice and c3
+        min_y = min(min(stats['sacrifice']), min(stats['c3']))
+        max_y = max(max(stats['sacrifice']), max(stats['c3']))
+        
+        # Add some padding to the limits
+        y_padding = (max_y - min_y) * 0.1
+        y_min = min_y - y_padding
+        y_max = max_y + y_padding
+        
+        # Set the same y-axis limits for both food sacrifice and c3
+        ax1.set_ylim(y_min, y_max)
+        ax2.set_ylim(y_min, y_max)
+        
+        # Ensure gridlines are visible from both axes but not duplicated
+        ax1.grid(True, alpha=0.3)
+        ax2.grid(False)  # Turn off grid for second axis
+        ax3.grid(False)  # Turn off grid for third axis
+        ax4.grid(False)  # Turn off grid for fourth axis
+        
+        # Plot connected sacrifice line with points
+        sacrifice_line = ax1.plot(bucket_centers, stats['sacrifice'],
+                                color='purple', linewidth=1, alpha=0.8,
+                                label='Food Sacrifice')
+        ax1.scatter(bucket_centers, stats['sacrifice'],
+                    c=['red' if s < 0 else 'purple' for s in stats['sacrifice']],
                     alpha=0.5, s=10)
-
+        
+        # Add vertical lines at bucket boundaries
+        for center in bucket_centers:
+            ax1.axvline(x=center, color='gray', linestyle='-', alpha=0.1)
+        
         # Add reference lines
         ax1.axhline(y=0, color='black', linestyle='--', alpha=0.3,
                     label='Poverty Line')
-        ax1.axvline(x=poor_households, color='red', linestyle='--', alpha=0.3)
-
-        # Plot bucketed means
-        line2 = ax2.plot(bucket_stats['bucket_center'],
-                         bucket_stats[f'c3{suffix}'],
-                         color='green',
-                         linewidth=2,
-                         label=f'{aggregation} total expenditure (c3)')
-        line3 = ax3.plot(
-            bucket_stats['bucket_center'],
-            bucket_stats['persons_count'],
-            color='blue',
-            linewidth=2,
-            label='Mean Household Size')
-
+        
+        # Plot bucketed statistics
+        line2 = ax2.plot(bucket_centers, stats['c3'],
+                        color='green', linewidth=2,
+                        label=f'{aggregation} total expenditure (c3)')
+        line3 = ax3.plot(bucket_centers, stats['household_size'],
+                        color='blue', linewidth=2,
+                        label=f'{aggregation} household size')
+        line4 = ax4.plot(bucket_centers, stats['age'],
+                        color='orange', linewidth=2,
+                        label=f'{aggregation} age')
+        
+        # Add sample count annotations
+        y_min = min(stats['sacrifice'].min(), 0)
+        y_max = max(stats['sacrifice'].max(), 0)
+        
+        for i, (count, cum_count) in enumerate(zip(stats['sample_count'], stats['cumulative_households'])):
+            ax1.text(cum_count, y_min + (y_max - y_min) * 0.1,
+                    f'n={count}\nTotal={cum_count}',
+                    rotation=45,
+                    verticalalignment='top',
+                    horizontalalignment='right',
+                    fontsize=8)
+        
         # Set labels and colors
-        ax1.set_xlabel('Households (Ordered by Food Sacrifice)')
+        ax1.set_xlabel('Cumulative Number of Households')
         ax1.set_ylabel('Food Sacrifice', color='purple')
         ax2.set_ylabel('Total Expenditure (c3)', color='green')
         ax3.set_ylabel('Household Size', color='blue')
-
+        ax4.set_ylabel('Mean Age', color='orange')
+        
         ax1.tick_params(axis='y', labelcolor='purple')
         ax2.tick_params(axis='y', labelcolor='green')
         ax3.tick_params(axis='y', labelcolor='blue')
-
+        ax4.tick_params(axis='y', labelcolor='orange')
+        
         plt.title(
-            f'Food Sacrifice Analysis - {lifestyle.capitalize()} {pop_type}\n' f'Bucket Size: {bucket_size} Households')
-
+            f'Food Sacrifice Analysis - {lifestyle.capitalize()} {pop_type}\n'
+            f'Bucket Size: {bucket_size} Households'
+        )
+        
         # Combine legends
-        lines1, labels1 = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        lines3, labels3 = ax3.get_legend_handles_labels()
-        ax1.legend(lines1 + line2 + line3,
-                   labels1 + [f'{aggregation} total expenditure (c3)', f'{aggregation} household size'],
-                   loc='upper left', bbox_to_anchor=(1.15, 1))
-
+        lines = sacrifice_line + line2 + line3 + line4
+        labels = [l.get_label() for l in lines]
+        ax1.legend(lines, labels, loc='upper left', bbox_to_anchor=(1.15, 1))
+        
         plt.tight_layout()
         return plt

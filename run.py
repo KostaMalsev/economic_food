@@ -190,6 +190,8 @@ class FamilyGroupAnalyzer:
         ]
         women_count = sum(row[col] for col in age_columns if "min2" in col and ("18" in col or "30" in col or "50" in col))
         return women_count
+    
+    
 
     def process_dataframe(self):
         """Process dataframe to calculate required metrics"""

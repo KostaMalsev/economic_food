@@ -33,6 +33,7 @@ class VisualizationManager:
             11: 'normalized',
             12: 'normalized',
             13: 'expenditure',
+            14: 'normalized',
             70: 'sufficiency',
         }
 
@@ -60,7 +61,7 @@ class VisualizationManager:
                 metric_type = 'per_capita' if per_capita else 'household'
                 print(f"\nGenerating {metric_type} metrics:")
 
-                for graph_num in [1]:  
+                for graph_num in range(1,15):  
                     print(f"  Creating graph {graph_num}...")
                     
                     try:
