@@ -165,8 +165,9 @@ class ExpenditureVisualizer(BaseVisualizer):
         max_value = 20000
         
         # Create buckets
+        nbuckets = 70 #30
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
-            df, f'c3{suffix}', max_value,bucket_size=30, min_samples=30
+            df, f'c3{suffix}', max_value,bucket_size=nbuckets, min_samples=nbuckets
         )
 
         # Define metrics for bucket statistics

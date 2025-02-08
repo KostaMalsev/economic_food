@@ -1,19 +1,18 @@
-graph, num_samples_in_bucket,min_samples
 create_graph1,70,70
 create_graph2,70,70
 create_graph5,1,70
 create_graph6,1,70
 create_graph7,70,70
 create_graph10,70,70
-create_graph12,250,250
-create_graph13,30,30
-create_graph14,30,30
+create_graph12,70,70
+create_graph13,70,70
+create_graph14,70,70
 create_graph1,70,70
 create_graph2,70,70
 create_graph5,1,70
 create_graph6,1,70
 create_graph7,70,70
 create_graph10,70,70
-create_graph12,250,250
-create_graph13,30,30
-create_graph14,30,30
+create_graph12,70,70
+create_graph13,70,70
+create_graph14,70,70

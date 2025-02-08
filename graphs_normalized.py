@@ -19,7 +19,7 @@ class NormalizedVisualizer(BaseVisualizer):
                             df[f'ZU-{lifestyle}{suffix}'] * 
                             100)
         
-        bucket_size = 250
+        bucket_size = 70 #250
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'food_pct_diff', bucket_size=bucket_size, min_samples=bucket_size
         )
@@ -145,7 +145,7 @@ class NormalizedVisualizer(BaseVisualizer):
         df['c3_pct_diff'] = ((-df[f'ZU-{lifestyle}{suffix}'] + df[f'c3{suffix}']) /
                             df[f'ZU-{lifestyle}{suffix}'] * 100)
         
-        bucket_size = 30
+        bucket_size = 70 #30
         df_bucketed, bucket_width = self.helper.create_fixed_width_buckets(
             df, 'food_pct_diff', bucket_size=bucket_size, min_samples=bucket_size
         )
