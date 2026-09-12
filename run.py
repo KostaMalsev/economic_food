@@ -15,10 +15,10 @@ class FamilyGroupAnalyzer:
             95.91524586, 384.5782373,    # 0-4
             250.5918009, 164.2829614,    # 5-9
             128.3428789, 208.2338264,    # 10-14
-            313.5189142, 290.7941503,    # 15-17
-            56.66946114, 289.0340474,    # 18-29
+            -3.135189142, 290.7941503,    # 15-17
+            56.66946114, 285.05400747,    # 18-29
             152.2557543, 775.2361008,    # 30-49
-            412.9771015, 616.6631982     # 50+
+            41.297710151, 616.6631982     # 50+
         ]
 
         self.active_zu_weights = [
@@ -108,9 +108,8 @@ class FamilyGroupAnalyzer:
         weighted_sum = sum(
             v * w for v, w in zip(values, weights[1:])) + weights[0]
 
-        if not is_sedentary:
-            food_norm = row[food_norm_col]
-            weighted_sum = food_norm + (food_norm - weighted_sum)
+        food_norm = row[food_norm_col]
+        weighted_sum = food_norm + (food_norm - weighted_sum)
 
         return weighted_sum
 
