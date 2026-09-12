@@ -57,7 +57,7 @@ def plot(summary, path):
     ax.set_xticks(x, [f"{size}\nn={n:,}" for size, n in zip(x, summary.n_families)])
     plt.setp(ax.get_xticklabels(), rotation=55, ha="right", fontsize=8)
     ax.set_xlabel("People in household / number of sampled families (n)")
-    ax.set_ylabel("Mean modeled monthly household amount (NIS)")
+    ax.set_ylabel("NIS/month")
     ax.set_title("Sedentary households: FoodNorm, ZL and ZU by family size (95% CI)")
     ax.grid(alpha=.22)
     ax.legend(loc="upper left", ncol=3)
