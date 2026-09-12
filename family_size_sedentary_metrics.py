@@ -24,7 +24,7 @@ METRICS = (
 def summarize(df):
     columns = ["persons_count"] + [column for column, _, _ in METRICS]
     sample = df[columns].replace([np.inf, -np.inf], np.nan).dropna()
-    sample = sample.loc[(sample.persons_count > 0) &
+    sample = sample.loc[(sample.persons_count > 0) & (sample.persons_count < 15) &
                         (sample.persons_count == sample.persons_count.astype(int))]
     rows = []
     for size, families in sample.groupby("persons_count", sort=True):
@@ -83,7 +83,8 @@ def main():
     plot(summary, args.output / "sedentary_zu_zl_foodnorm_by_family_size.png")
     (args.output / "sedentary_zu_zl_foodnorm_README.txt").write_text(
         f"Input: {args.input.name}; included: {int(summary.n_families.sum())} families; "
-        f"excluded: {len(analyzer.df) - int(summary.n_families.sum())}.\n"
+        f"excluded: {len(analyzer.df) - int(summary.n_families.sum())}. "
+        "Shown family sizes: 1-14; size 15 and above is excluded.\n"
         "Family size is the sum of the 14 age/sex count columns. All three amounts are "
         "monthly modeled household totals in the original model's price basis. "
         "Sedentary ZL = 2 * sedentary FoodNorm - predicted sedentary food expenditure; "
