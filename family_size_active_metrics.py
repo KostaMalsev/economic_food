@@ -34,6 +34,11 @@ def prepare_sample(df):
     sample["predicted_c30_plus_c31"] = (
         2 * sample["FoodNorm-active"] - sample["ZL-active"]
     )
+    sample["food_actual - FoodNorm-active"] = (
+        sample["food_actual"] - sample["FoodNorm-active"]
+    )
+    sample["c3(actual) - ZU-active"] = sample["c3"] - sample["ZU-active"]
+    sample["c3(actual) - ZL-active"] = sample["c3"] - sample["ZL-active"]
     return sample
 
 
@@ -105,6 +110,8 @@ def main():
     export_columns = [
         "misparmb", "persons_count", "c3", "food_actual", "FoodNorm-active",
         "predicted_c30_plus_c31", "ZL-active", "ZU-active",
+        "food_actual - FoodNorm-active", "c3(actual) - ZU-active",
+        "c3(actual) - ZL-active",
     ]
     sample.sort_values(["persons_count", "misparmb"])[export_columns].to_csv(
         args.output / "active_household_values_by_family_size_1_to_7.csv",
@@ -123,6 +130,8 @@ def main():
         "It is the combined active food-expenditure regression prediction reconstructed "
         "exactly as 2 * FoodNorm-active - ZL-active; separate c30/c31 predictions are "
         "not available in the model.\n"
+        "The final three columns are row-level differences: food_actual minus active "
+        "FoodNorm, actual c3 minus active ZU, and actual c3 minus active ZL.\n"
         "Small transparent points show every included household with deterministic "
         "symmetric jitter centered on its integer family size. All metric means and "
         "confidence intervals align exactly on that integer tick. Large points are "
