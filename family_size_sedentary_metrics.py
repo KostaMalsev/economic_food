@@ -21,11 +21,16 @@ METRICS = (
 )
 
 
-def summarize(df):
-    columns = ["persons_count"] + [column for column, _, _ in METRICS]
+def prepare_sample(df):
+    columns = ["misparmb", "persons_count"] + [column for column, _, _ in METRICS]
     sample = df[columns].replace([np.inf, -np.inf], np.nan).dropna()
-    sample = sample.loc[(sample.persons_count > 0) & (sample.persons_count < 15) &
-                        (sample.persons_count == sample.persons_count.astype(int))]
+    sample = sample.loc[(sample.persons_count >= 1) & (sample.persons_count <= 7) &
+                        (sample.persons_count == sample.persons_count.astype(int))].copy()
+    sample["persons_count"] = sample["persons_count"].astype(int)
+    return sample
+
+
+def summarize(sample):
     rows = []
     for size, families in sample.groupby("persons_count", sort=True):
         n = len(families)
@@ -42,23 +47,33 @@ def summarize(df):
     return pd.DataFrame(rows)
 
 
-def plot(summary, path):
+def plot(summary, sample, path):
     fig, ax = plt.subplots(figsize=(17, 8))
     x = summary.family_size.to_numpy()
-    for _, label, color in METRICS:
+    offsets = {"FoodNorm": -0.22, "ZL": 0, "ZU": 0.22}
+    rng = np.random.default_rng(2026)
+    for column, label, color in METRICS:
+        # Show every household as a transparent jittered point. Horizontal jitter
+        # only reduces overplotting; it does not change family size or Y values.
+        for size, families in sample.groupby("persons_count", sort=True):
+            jitter = rng.uniform(-0.075, 0.075, len(families))
+            ax.scatter(size + offsets[label] + jitter, families[column], s=7,
+                       color=color, alpha=0.075, linewidths=0, rasterized=True)
         y = summary[f"mean_{label}"].to_numpy()
         low = summary[f"ci95_lower_{label}"].to_numpy()
         high = summary[f"ci95_upper_{label}"].to_numpy()
         valid = np.isfinite(low) & np.isfinite(high)
-        ax.plot(x, y, color=color, alpha=.58, linewidth=1.2)
-        ax.errorbar(x[valid], y[valid], yerr=[y[valid] - low[valid], high[valid] - y[valid]],
-                    fmt="o", color=color, capsize=3, markersize=5, label=label)
-        ax.scatter(x[~valid], y[~valid], marker="D", color=color, s=36)
+        mean_x = x + offsets[label]
+        ax.plot(mean_x, y, color=color, alpha=.8, linewidth=1.4)
+        ax.errorbar(mean_x[valid], y[valid],
+                    yerr=[y[valid] - low[valid], high[valid] - y[valid]],
+                    fmt="o", color=color, markeredgecolor="white", markeredgewidth=.6,
+                    capsize=4, markersize=7, label=f"{label} mean (95% CI)", zorder=5)
     ax.set_xticks(x, [f"{size}\nn={n:,}" for size, n in zip(x, summary.n_families)])
     plt.setp(ax.get_xticklabels(), rotation=55, ha="right", fontsize=8)
     ax.set_xlabel("People in household / number of sampled families (n)")
     ax.set_ylabel("NIS/month")
-    ax.set_title("Sedentary households: FoodNorm, ZL and ZU by family size (95% CI)")
+    ax.set_title("Sedentary households: individual values and means by family size")
     ax.grid(alpha=.22)
     ax.legend(loc="upper left", ncol=3)
     fig.tight_layout()
@@ -74,22 +89,28 @@ def main():
     analyzer = FamilyGroupAnalyzer(str(args.input))
     if not analyzer.read_csv() or not analyzer.process_dataframe():
         raise RuntimeError("Could not process household sample")
-    summary = summarize(analyzer.df)
+    sample = prepare_sample(analyzer.df)
+    summary = summarize(sample)
     if summary.empty:
         raise RuntimeError("No valid household records")
     args.output.mkdir(parents=True, exist_ok=True)
     summary.to_csv(args.output / "sedentary_zu_zl_foodnorm_by_family_size_95ci.csv",
                    index=False, float_format="%.10f")
-    plot(summary, args.output / "sedentary_zu_zl_foodnorm_by_family_size.png")
+    sample.sort_values(["persons_count", "misparmb"]).to_csv(
+        args.output / "sedentary_household_values_by_family_size_1_to_7.csv",
+        index=False, float_format="%.10f")
+    plot(summary, sample, args.output / "sedentary_zu_zl_foodnorm_by_family_size.png")
     (args.output / "sedentary_zu_zl_foodnorm_README.txt").write_text(
         f"Input: {args.input.name}; included: {int(summary.n_families.sum())} families; "
         f"excluded: {len(analyzer.df) - int(summary.n_families.sum())}. "
-        "Shown family sizes: 1-14; size 15 and above is excluded.\n"
+        "Shown family sizes: 1-7 inclusive; size 8 and above is excluded.\n"
         "Family size is the sum of the 14 age/sex count columns. All three amounts are "
         "monthly modeled household totals in the original model's price basis. "
         "Sedentary ZL = 2 * sedentary FoodNorm - predicted sedentary food expenditure; "
         "sedentary ZU = predicted total expenditure.\n"
-        "Each point is the unweighted mean among sampled families with that exact size. "
+        "Small transparent points are every included household's exact modeled value, "
+        "with deterministic horizontal jitter to reduce overlap. Large points are the "
+        "unweighted means among sampled families with that exact size. "
         "The second line on each x tick gives the number of families in the group. "
         "Error bars are two-sided 95% Student-t intervals for the mean, based on the "
         "sample standard deviation within each size group. For n=1 the point is a "
