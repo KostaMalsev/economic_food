@@ -50,22 +50,23 @@ def summarize(sample):
 def plot(summary, sample, path):
     fig, ax = plt.subplots(figsize=(17, 8))
     x = summary.family_size.to_numpy()
-    offsets = {"FoodNorm": -0.22, "ZL": 0, "ZU": 0.22}
     rng = np.random.default_rng(2026)
+    jitters = {
+        size: rng.uniform(-0.075, 0.075, len(families))
+        for size, families in sample.groupby("persons_count", sort=True)
+    }
     for column, label, color in METRICS:
         # Show every household as a transparent jittered point. Horizontal jitter
         # only reduces overplotting; it does not change family size or Y values.
         for size, families in sample.groupby("persons_count", sort=True):
-            jitter = rng.uniform(-0.075, 0.075, len(families))
-            ax.scatter(size + offsets[label] + jitter, families[column], s=7,
+            ax.scatter(size + jitters[size], families[column], s=7,
                        color=color, alpha=0.075, linewidths=0, rasterized=True)
         y = summary[f"mean_{label}"].to_numpy()
         low = summary[f"ci95_lower_{label}"].to_numpy()
         high = summary[f"ci95_upper_{label}"].to_numpy()
         valid = np.isfinite(low) & np.isfinite(high)
-        mean_x = x + offsets[label]
-        ax.plot(mean_x, y, color=color, alpha=.8, linewidth=1.4)
-        ax.errorbar(mean_x[valid], y[valid],
+        ax.plot(x, y, color=color, alpha=.8, linewidth=1.4)
+        ax.errorbar(x[valid], y[valid],
                     yerr=[y[valid] - low[valid], high[valid] - y[valid]],
                     fmt="o", color=color, markeredgecolor="white", markeredgewidth=.6,
                     capsize=4, markersize=7, label=f"{label} mean (95% CI)", zorder=5)
@@ -109,7 +110,9 @@ def main():
         "Sedentary ZL = 2 * sedentary FoodNorm - predicted sedentary food expenditure; "
         "sedentary ZU = predicted total expenditure.\n"
         "Small transparent points are every included household's exact modeled value, "
-        "with deterministic horizontal jitter to reduce overlap. Large points are the "
+        "with deterministic symmetric jitter centered on its exact integer family size "
+        "to reduce overlap. All three means and confidence intervals are aligned exactly "
+        "on the integer family-size tick. Large points are the "
         "unweighted means among sampled families with that exact size. "
         "The second line on each x tick gives the number of families in the group. "
         "Error bars are two-sided 95% Student-t intervals for the mean, based on the "
