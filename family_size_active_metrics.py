@@ -27,6 +27,11 @@ def prepare_sample(df):
     sample = sample.loc[(sample.persons_count >= 1) & (sample.persons_count <= 7) &
                         (sample.persons_count == sample.persons_count.astype(int))].copy()
     sample["persons_count"] = sample["persons_count"].astype(int)
+    # ZL = 2 * FoodNorm - predicted(c30 + c31), rearranged to expose
+    # the food-expenditure regression prediction used by the ZL calculation.
+    sample["predicted_c30_plus_c31"] = (
+        2 * sample["FoodNorm-active"] - sample["ZL-active"]
+    )
     return sample
 
 
@@ -95,7 +100,11 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     summary.to_csv(args.output / "active_zu_zl_foodnorm_by_family_size_95ci.csv",
                    index=False, float_format="%.10f")
-    sample.sort_values(["persons_count", "misparmb"]).to_csv(
+    export_columns = [
+        "misparmb", "persons_count", "FoodNorm-active",
+        "predicted_c30_plus_c31", "ZL-active", "ZU-active",
+    ]
+    sample.sort_values(["persons_count", "misparmb"])[export_columns].to_csv(
         args.output / "active_household_values_by_family_size_1_to_7.csv",
         index=False, float_format="%.10f")
     plot(summary, sample, args.output / "active_zu_zl_foodnorm_by_family_size.png")
@@ -106,6 +115,10 @@ def main():
         "All amounts are monthly household totals in the original model price basis. "
         "Active ZL = 2 * active FoodNorm - predicted active food expenditure; "
         "active ZU = predicted total expenditure.\n"
+        "The household-level CSV places predicted_c30_plus_c31 after FoodNorm-active. "
+        "It is the combined active food-expenditure regression prediction reconstructed "
+        "exactly as 2 * FoodNorm-active - ZL-active; separate c30/c31 predictions are "
+        "not available in the model.\n"
         "Small transparent points show every included household with deterministic "
         "symmetric jitter centered on its integer family size. All metric means and "
         "confidence intervals align exactly on that integer tick. Large points are "
