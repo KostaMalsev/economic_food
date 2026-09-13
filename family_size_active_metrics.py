@@ -22,7 +22,9 @@ METRICS = (
 
 
 def prepare_sample(df):
-    columns = ["misparmb", "persons_count"] + [column for column, _, _ in METRICS]
+    columns = ["misparmb", "persons_count", "c3", "food_actual"] + [
+        column for column, _, _ in METRICS
+    ]
     sample = df[columns].replace([np.inf, -np.inf], np.nan).dropna()
     sample = sample.loc[(sample.persons_count >= 1) & (sample.persons_count <= 7) &
                         (sample.persons_count == sample.persons_count.astype(int))].copy()
@@ -101,7 +103,7 @@ def main():
     summary.to_csv(args.output / "active_zu_zl_foodnorm_by_family_size_95ci.csv",
                    index=False, float_format="%.10f")
     export_columns = [
-        "misparmb", "persons_count", "FoodNorm-active",
+        "misparmb", "persons_count", "c3", "food_actual", "FoodNorm-active",
         "predicted_c30_plus_c31", "ZL-active", "ZU-active",
     ]
     sample.sort_values(["persons_count", "misparmb"])[export_columns].to_csv(
@@ -115,6 +117,8 @@ def main():
         "All amounts are monthly household totals in the original model price basis. "
         "Active ZL = 2 * active FoodNorm - predicted active food expenditure; "
         "active ZU = predicted total expenditure.\n"
+        "In the household-level CSV, c3 is actual total expenditure and food_actual is "
+        "actual c30+c31; both source values appear directly after persons_count.\n"
         "The household-level CSV places predicted_c30_plus_c31 after FoodNorm-active. "
         "It is the combined active food-expenditure regression prediction reconstructed "
         "exactly as 2 * FoodNorm-active - ZL-active; separate c30/c31 predictions are "
