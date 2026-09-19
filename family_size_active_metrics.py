@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t
 
+from publication_style import apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -60,7 +61,9 @@ def summarize(sample):
 
 
 def plot(summary, sample, path):
-    fig, ax = plt.subplots(figsize=(17, 8))
+    apply_publication_style()
+    # Wide enough to preserve 10-point text when placed in a two-column article.
+    fig, ax = plt.subplots(figsize=(12.2, 5.8))
     x = summary.family_size.to_numpy()
     rng = np.random.default_rng(2026)
     jitters = {
@@ -69,26 +72,26 @@ def plot(summary, sample, path):
     }
     for column, label, color in METRICS:
         for size, families in sample.groupby("persons_count", sort=True):
-            ax.scatter(size + jitters[size], families[column], s=7,
-                       color=color, alpha=.075, linewidths=0, rasterized=True)
+            ax.scatter(size + jitters[size], families[column], s=4,
+                       color=color, alpha=.045, linewidths=0, rasterized=True)
         y = summary[f"mean_{label}"].to_numpy()
         lower = summary[f"ci95_lower_{label}"].to_numpy()
         upper = summary[f"ci95_upper_{label}"].to_numpy()
         valid = np.isfinite(lower) & np.isfinite(upper)
-        ax.plot(x, y, color=color, alpha=.8, linewidth=1.4)
+        ax.plot(x, y, color=color, alpha=.9, linewidth=1.6)
         ax.errorbar(x[valid], y[valid],
                     yerr=[y[valid]-lower[valid], upper[valid]-y[valid]],
                     fmt="o", color=color, markeredgecolor="white", markeredgewidth=.6,
-                    capsize=4, markersize=7, label=f"{label} mean (95% CI)", zorder=5)
+                    capsize=3, markersize=5.5, label=f"{label} mean (95% CI)", zorder=5)
     ax.set_xticks(x, [f"{size}\nn={n:,}" for size, n in zip(x, summary.n_families)])
-    plt.setp(ax.get_xticklabels(), rotation=55, ha="right", fontsize=8)
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center")
     ax.set_xlabel("People in household / number of sampled families (n)")
     ax.set_ylabel("NIS/month")
     ax.set_title("Active households: individual values and means by family size")
     ax.grid(alpha=.22)
-    ax.legend(loc="upper left", ncol=3)
+    ax.legend(loc="upper left", ncol=3, frameon=True)
     fig.tight_layout()
-    fig.savefig(path, dpi=220, bbox_inches="tight")
+    save_png_and_pdf(fig, path)
     plt.close(fig)
 
 
@@ -136,7 +139,9 @@ def main():
         "symmetric jitter centered on its integer family size. All metric means and "
         "confidence intervals align exactly on that integer tick. Large points are "
         "unweighted group means; error bars are two-sided 95% Student-t intervals. "
-        "Intervals exclude regression-coefficient uncertainty and survey-design weights.\n",
+        "Intervals exclude regression-coefficient uncertainty and survey-design weights.\n"
+        "All figure text uses a consistent 10-point publication font. The PNG is exported "
+        "at 300 DPI and the matching PDF keeps text and lines sharp when resized.\n",
         encoding="utf-8",
     )
     print(f"Wrote {len(summary)} groups for {int(summary.n_families.sum())} families")
