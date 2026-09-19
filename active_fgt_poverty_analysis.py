@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from publication_style import apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -91,6 +92,7 @@ def summarize_overall(sample):
 
 
 def draw_fgt(summary, path):
+    apply_publication_style()
     x = summary["family_size"].to_numpy()
     fig, ax = plt.subplots(figsize=(13, 7))
     for key, label, _, _, color, marker in DEFINITIONS:
@@ -108,17 +110,18 @@ def draw_fgt(summary, path):
     ax.legend()
     ax.grid(alpha=0.22)
     fig.tight_layout()
-    fig.savefig(path, dpi=220, bbox_inches="tight")
+    save_png_and_pdf(fig, path)
     plt.close(fig)
 
 
 def draw_overall_rates(summary, path):
+    apply_publication_style()
     x = np.arange(len(summary))
     rates = summary["poverty_rate_percent"].to_numpy()
     lower = summary["ci95_lower_percent"].to_numpy()
     upper = summary["ci95_upper_percent"].to_numpy()
     colors = [entry[4] for entry in DEFINITIONS]
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(7.1, 4.8))
     bars = ax.bar(x, rates, color=colors, width=0.62)
     ax.errorbar(x, rates, yerr=[rates - lower, upper - rates], fmt="none",
                 ecolor="#333333", capsize=5, linewidth=1.2)
@@ -127,7 +130,7 @@ def draw_overall_rates(summary, path):
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.2,
             f"{row.poverty_rate_percent:.1f}%\n"
             f"{int(row.poor_households):,}/{int(row.valid_households):,}",
-            ha="center", va="bottom", fontsize=10,
+            ha="center", va="bottom",
         )
     ax.set_xticks(x, ["Food actual\n< FoodNorm", "C3 actual\n< ZL", "C3 actual\n< ZU"])
     ax.set_ylim(0, max(100, rates.max() + 15))
@@ -135,7 +138,7 @@ def draw_overall_rates(summary, path):
     ax.set_title("Active households: overall poverty rates (2017 expenditures, 95% Wilson CI)")
     ax.grid(axis="y", alpha=0.22)
     fig.tight_layout()
-    fig.savefig(path, dpi=220, bbox_inches="tight")
+    save_png_and_pdf(fig, path)
     plt.close(fig)
 
 
