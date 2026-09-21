@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t
 
+from publication_style import apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -65,8 +66,9 @@ def summarize(df):
 
 
 def draw(summary, path):
+    apply_publication_style()
     x = summary["family_size"].to_numpy()
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(8.8, 5.8))
     for key, label, _, _, color, marker in SERIES:
         y = summary[f"mean_{key}"].to_numpy()
         lower = summary[f"ci95_lower_{key}"].to_numpy()
@@ -90,7 +92,7 @@ def draw(summary, path):
     ax.legend()
     ax.grid(alpha=0.22)
     fig.tight_layout()
-    fig.savefig(path, dpi=220, bbox_inches="tight")
+    save_png_and_pdf(fig, path)
     plt.close(fig)
 
 
@@ -123,7 +125,9 @@ def main():
         "Error bars are unweighted 95% Student t confidence intervals for each conditional "
         "mean. The n labels are the qualifying households for that series and family size, "
         "not the total number of sampled households in the family-size group. Intervals do "
-        "not account for the survey sampling design. Units are percentage points.\n",
+        "not account for the survey sampling design. Units are percentage points.\n"
+        "All figure text uses a consistent 10-point publication font. The PNG is exported "
+        "at 300 DPI and the matching PDF is scalable.\n",
         encoding="utf-8",
     )
     print(summary.to_string(index=False, float_format=lambda value: f"{value:.2f}"))
