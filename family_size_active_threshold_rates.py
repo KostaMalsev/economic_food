@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from publication_style import apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -57,8 +58,9 @@ def summarize(df):
 
 
 def draw(summary, path):
+    apply_publication_style()
     x = summary["family_size"].to_numpy()
-    fig, ax = plt.subplots(figsize=(13, 7))
+    fig, ax = plt.subplots(figsize=(8.2, 5.2))
     for key, label, _, _, color, marker in SERIES:
         y = summary[f"percent_{key}"].to_numpy()
         lower = summary[f"ci95_lower_{key}"].to_numpy()
@@ -79,7 +81,7 @@ def draw(summary, path):
     ax.legend()
     ax.grid(alpha=0.22)
     fig.tight_layout()
-    fig.savefig(path, dpi=220, bbox_inches="tight")
+    save_png_and_pdf(fig, path)
     plt.close(fig)
 
 
@@ -112,7 +114,9 @@ def main():
         "ZL-active and ZU-active are household-level modeled thresholds from run.py.\n"
         "The CSV reports the numerator, denominator, percentage, and 95% Wilson score "
         "interval for each series. Results are unweighted and intervals do not account "
-        "for the survey sampling design. All series use identical x coordinates.\n",
+        "for the survey sampling design. All series use identical x coordinates.\n"
+        "All figure text uses a consistent 10-point publication font. The PNG is exported "
+        "at 300 DPI and the matching PDF is scalable.\n",
         encoding="utf-8",
     )
     print(summary.to_string(index=False, float_format=lambda value: f"{value:.2f}"))
