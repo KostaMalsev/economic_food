@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from publication_style import apply_publication_style, save_png_and_pdf
+from publication_style import FIGURE_WIDTH_IN, apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -94,7 +94,7 @@ def summarize_overall(sample):
 def draw_fgt(summary, path):
     apply_publication_style()
     x = summary["family_size"].to_numpy()
-    fig, ax = plt.subplots(figsize=(13, 7))
+    fig, ax = plt.subplots(figsize=(FIGURE_WIDTH_IN, 4.8))
     for key, label, _, _, color, marker in DEFINITIONS:
         ax.plot(
             x, summary[f"fgt2_percent_{key}"], marker=marker, color=color,
@@ -121,7 +121,7 @@ def draw_overall_rates(summary, path):
     lower = summary["ci95_lower_percent"].to_numpy()
     upper = summary["ci95_upper_percent"].to_numpy()
     colors = [entry[4] for entry in DEFINITIONS]
-    fig, ax = plt.subplots(figsize=(7.1, 4.8))
+    fig, ax = plt.subplots(figsize=(FIGURE_WIDTH_IN, 4.8))
     bars = ax.bar(x, rates, color=colors, width=0.62)
     ax.errorbar(x, rates, yerr=[rates - lower, upper - rates], fmt="none",
                 ecolor="#333333", capsize=5, linewidth=1.2)
