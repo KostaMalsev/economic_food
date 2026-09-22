@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from publication_style import apply_publication_style, save_png_and_pdf
+from publication_style import FIGURE_WIDTH_IN, apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -60,7 +60,7 @@ def summarize(df):
 def draw(summary, path):
     apply_publication_style()
     x = summary["family_size"].to_numpy()
-    fig, ax = plt.subplots(figsize=(8.2, 5.2))
+    fig, ax = plt.subplots(figsize=(FIGURE_WIDTH_IN, 4.8))
     for key, label, _, _, color, marker in SERIES:
         y = summary[f"percent_{key}"].to_numpy()
         lower = summary[f"ci95_lower_{key}"].to_numpy()
