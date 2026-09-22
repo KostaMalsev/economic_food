@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 
 FONT_SIZE_PT = 10
+FIGURE_WIDTH_IN = 7.1
 
 
 def apply_publication_style():
