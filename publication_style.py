@@ -11,6 +11,7 @@ FONT_SIZE_PT = 10
 def apply_publication_style():
     """Use one consistent 10-point font throughout every figure element."""
     plt.rcParams.update({
+        "font.family": "DejaVu Sans",
         "font.size": FONT_SIZE_PT,
         "axes.titlesize": FONT_SIZE_PT,
         "axes.labelsize": FONT_SIZE_PT,
