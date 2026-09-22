@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t
 
-from publication_style import apply_publication_style, save_png_and_pdf
+from publication_style import FIGURE_WIDTH_IN, apply_publication_style, save_png_and_pdf
 from run import FamilyGroupAnalyzer
 
 
@@ -62,8 +62,8 @@ def summarize(sample):
 
 def plot(summary, sample, path):
     apply_publication_style()
-    # Wide enough to preserve 10-point text when placed in a two-column article.
-    fig, ax = plt.subplots(figsize=(12.2, 5.8))
+    # Match the reference figure width so 10-point text renders at the same scale.
+    fig, ax = plt.subplots(figsize=(FIGURE_WIDTH_IN, 5.0))
     x = summary.family_size.to_numpy()
     rng = np.random.default_rng(2026)
     jitters = {
@@ -89,7 +89,7 @@ def plot(summary, sample, path):
     ax.set_ylabel("NIS/month")
     ax.set_title("Active households: individual values and means by family size")
     ax.grid(alpha=.22)
-    ax.legend(loc="upper left", ncol=3, frameon=True)
+    ax.legend(loc="upper left", ncol=2, frameon=True)
     fig.tight_layout()
     save_png_and_pdf(fig, path)
     plt.close(fig)
