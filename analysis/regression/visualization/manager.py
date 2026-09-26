@@ -1,8 +1,8 @@
-from graphs_expenditure import ExpenditureVisualizer
-from graphs_sacrifice import SacrificeVisualizer
-from graphs_sufficiency import SufficiencyVisualizer
-from graphs_detailed import DetailedVisualizer
-from graphs_normalized import NormalizedVisualizer
+from analysis.regression.visualization.expenditure import ExpenditureVisualizer
+from analysis.regression.visualization.sacrifice import SacrificeVisualizer
+from analysis.regression.visualization.sufficiency import SufficiencyVisualizer
+from analysis.regression.visualization.detailed import DetailedVisualizer
+from analysis.regression.visualization.normalized import NormalizedVisualizer
 
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from base_visualizer import BaseVisualizer
+from analysis.regression.visualization.base import BaseVisualizer
 
 
 class DetailedVisualizer(BaseVisualizer):

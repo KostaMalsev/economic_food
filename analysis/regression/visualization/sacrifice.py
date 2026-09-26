@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from base_visualizer import BaseVisualizer
+from analysis.regression.visualization.base import BaseVisualizer
 
 
 class SacrificeVisualizer(BaseVisualizer):
