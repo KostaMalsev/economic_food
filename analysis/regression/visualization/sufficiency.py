@@ -1,10 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import bucketing_helper as bh
-
-
-from base_visualizer import BaseVisualizer
+from analysis.regression.visualization import bucketing as bh
+from analysis.regression.visualization.base import BaseVisualizer
 
 
 class SufficiencyVisualizer(BaseVisualizer):

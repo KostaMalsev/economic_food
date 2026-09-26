@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 from pathlib import Path
+from analysis.shared.paths import DEFAULT_REGRESSION_OUTPUT, DEFAULT_SURVEY_DATA
 
 import matplotlib
 
@@ -68,8 +69,8 @@ def draw(summary, path):
 
 def main():
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=Path("food_economics_2024.csv"))
-    parser.add_argument("--output", type=Path, default=Path("2026-latet"))
+    parser.add_argument("--input", type=Path, default=DEFAULT_SURVEY_DATA)
+    parser.add_argument("--output", type=Path, default=DEFAULT_REGRESSION_OUTPUT)
     args = parser.parse_args()
     df = pd.read_csv(args.input, thousands=",")
     summary, excluded = summarize(df)

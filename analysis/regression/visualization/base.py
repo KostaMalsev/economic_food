@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
-from bucketing_helper import BucketingHelper
+from analysis.regression.visualization.bucketing import BucketingHelper
 
 
 class BaseVisualizer:

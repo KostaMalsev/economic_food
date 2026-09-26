@@ -1,15 +1,24 @@
 
 # Project Files Overview
 
+## Repository layout
+
+- `data/`: shared survey and regression CSV inputs.
+- `analysis/empirical/`: empirical household-size thresholds and charts.
+- `analysis/regression/model.py`: regression threshold model.
+- `analysis/regression/reports/`: regression-based reports.
+- `analysis/regression/visualization/`: legacy numbered graphs.
+- `analysis/shared/`: common paths and chart styling only.
+- `docs/assets/`: reference images.
+
+Run the empirical figures with `python -m analysis.empirical.generate_charts`.
+The compatible regression entry point remains `python run.py`.
+
 ## Core Files
-- `bucketing_helper.py`: Contains the BucketingHelper class for consistent data bucketing and statistics calculations
-- `base_visualizer.py`: Base visualization class with common functionality
-- `graphs_expenditure.py`: ExpenditureVisualizer for graphs 1,2,13 (expenditure analysis),
-- `graphs_sacrifice.py`: SacrificeVisualizer for graphs 5-6 (sacrifice analysis)
-- `graphs_sufficiency.py`: SufficiencyVisualizer for graphs 7-8 (sufficiency analysis)
-- `graphs_detailed.py`: DetailedVisualizer for graphs 9-10 (detailed analysis)
-- `graphs_normalized.py`: NormalizedVisualizer for graphs 11-12 (normalized analysis)
-- `visualization_manager.py`: Main class to coordinate all visualizers
+- `analysis/regression/visualization/bucketing.py`: consistent data bucketing and statistics calculations
+- `analysis/regression/visualization/base.py`: base visualization class
+- `analysis/regression/visualization/`: expenditure, sacrifice, sufficiency, detailed, and normalized numbered graphs
+- `analysis/regression/visualization/manager.py`: coordinates the numbered visualizers
 - `__init__.py`: Package initialization with exports
 - `requirements.txt`: Required Python packages
 
@@ -25,4 +34,3 @@
    b. ZU = mean TotalExpenditure(C3)
 
 
-      

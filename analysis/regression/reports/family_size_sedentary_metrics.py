@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 from pathlib import Path
+from analysis.shared.paths import DEFAULT_REGRESSION_OUTPUT, DEFAULT_SURVEY_DATA
 
 import matplotlib
 
@@ -11,7 +12,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t
 
-from run import FamilyGroupAnalyzer
+from analysis.regression.model import FamilyGroupAnalyzer
 
 
 METRICS = (
@@ -84,8 +85,8 @@ def plot(summary, sample, path):
 
 def main():
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=Path("food_economics_2024.csv"))
-    parser.add_argument("--output", type=Path, default=Path("2026-latet"))
+    parser.add_argument("--input", type=Path, default=DEFAULT_SURVEY_DATA)
+    parser.add_argument("--output", type=Path, default=DEFAULT_REGRESSION_OUTPUT)
     args = parser.parse_args()
     analyzer = FamilyGroupAnalyzer(str(args.input))
     if not analyzer.read_csv() or not analyzer.process_dataframe():

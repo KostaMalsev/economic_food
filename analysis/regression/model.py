@@ -3,7 +3,8 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-from visualization_manager import VisualizationManager
+from analysis.regression.visualization.manager import VisualizationManager
+from analysis.shared.paths import DEFAULT_SURVEY_DATA
 
 
 class FamilyGroupAnalyzer:
@@ -271,7 +272,7 @@ class FamilyGroupAnalyzer:
 
 def main():
     # Initialize analyzer
-    analyzer = FamilyGroupAnalyzer("food_economics_2024.csv")
+    analyzer = FamilyGroupAnalyzer(str(DEFAULT_SURVEY_DATA))
 
     # Read data
     print("\nReading data...")

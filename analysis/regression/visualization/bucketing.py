@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import inspect
+from analysis.shared.paths import DATA_DIR
 
 class BucketingHelper:
     @staticmethod
@@ -38,7 +39,7 @@ class BucketingHelper:
         #store the bucket sizes for each call:
         
         caller_function_name = inspect.stack()[1][3]
-        with open('buckets.csv', 'a') as file:
+        with (DATA_DIR / 'buckets.csv').open('a') as file:
             file.write(f'{caller_function_name},{bucket_size},{min_samples}\n')
 
         # Sort data and get range
