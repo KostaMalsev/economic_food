@@ -16,11 +16,11 @@ OUTPUT_COLUMNS = [
     "c30_actual", "c31_actual", "c32_actual", "c33_actual",
     "c34_actual", "c35_actual", "c36_actual", "c37_actual",
     "c38_actual", "c39_actual", "food_actual", "nonfood_actual",
-    "FoodNorm-active",
+    "FoodNorm-active", "FoodNorm-sedentary",
 ]
 
 
-def extract(source_path):
+def extract(source_path, foodnorm_source):
     workbook = load_workbook(source_path, read_only=True, data_only=True)
     if SOURCE_SHEET not in workbook.sheetnames:
         raise KeyError(f"Missing source sheet: {SOURCE_SHEET!r}")
@@ -52,7 +52,14 @@ def extract(source_path):
         else:
             households[household_id] = normalized
 
-    data = pd.DataFrame(households.values(), columns=OUTPUT_COLUMNS)
+    # Sedentary FoodNorm is maintained in the repository's canonical household
+    # data and joins one-to-one on the survey household identifier.
+    norms = pd.read_csv(foodnorm_source, usecols=["misparmb", "FoodNorm-sedentary"])
+    if norms["misparmb"].duplicated().any():
+        raise ValueError("FoodNorm source must contain one row per household")
+    data = pd.DataFrame(households.values())
+    data = data.merge(norms, on="misparmb", how="left", validate="one_to_one")
+    data = data[OUTPUT_COLUMNS]
     data = data.sort_values("misparmb").reset_index(drop=True)
     if len(data) != 9017:
         raise ValueError(f"Expected 9,017 households, found {len(data):,}")
@@ -70,8 +77,10 @@ def main():
     parser.add_argument("source", type=Path)
     parser.add_argument("--output", type=Path,
                         default=HERE / "data" / "household_inputs.csv")
+    parser.add_argument("--foodnorm-source", type=Path,
+                        default=HERE.parents[1] / "data" / "food_economics_2024.csv")
     args = parser.parse_args()
-    data = extract(args.source)
+    data = extract(args.source, args.foodnorm_source)
     data.to_csv(args.output, index=False, float_format="%.10f")
     print(f"Wrote {len(data):,} unique households to {args.output}")
 
