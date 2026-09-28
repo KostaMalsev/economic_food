@@ -134,10 +134,12 @@ def summarize_overall(data, sensitivity=False):
 def draw_thresholds(t, zl, zu, kind, path):
     apply_publication_style(); fig,ax=plt.subplots(figsize=(FIGURE_WIDTH_IN,4.8))
     for sample,key,color in ((zl,"zl","#e67e22"),(zu,"zu","#7251a3")):
-        ax.scatter(sample.persons_count,sample[f"candidate_{key}_{kind}"],s=12,alpha=.2,color=color,edgecolors="none")
+        plotted = sample[sample.persons_count.between(1, MAX_FAMILY_SIZE)]
+        ax.scatter(plotted.persons_count,plotted[f"candidate_{key}_{kind}"],s=12,alpha=.2,color=color,edgecolors="none")
     for col,label,color,marker in (("FoodNorm","FoodNorm mean","#2478a8","o"),("ZL","Empirical ZL mean","#e67e22","s"),("ZU","Empirical ZU mean","#7251a3","^")):
         ax.plot(t.persons_count,t[col],marker=marker,color=color,linewidth=1.8,markersize=6,label=label)
-    ax.set_xticks(t.persons_count); ax.set_xlabel("People in household"); ax.set_ylabel("NIS/month")
+    ax.set_xticks(t.persons_count); ax.set_xlim(.5, MAX_FAMILY_SIZE + .5)
+    ax.set_xlabel("People in household"); ax.set_ylabel("NIS/month")
     ax.set_title(f"{kind.title()} households: empirical FoodNorm, ZL and ZU by family size")
     ax.legend(); ax.grid(alpha=.22); fig.tight_layout(); save_png_and_pdf(fig,path); plt.close(fig)
 
@@ -146,7 +148,7 @@ def draw_rates(s,kind,path):
     for key,label,color,marker in SERIES:
         y=s[f"poverty_rate_percent_{key}"].to_numpy(); lo=s[f"ci95_lower_percent_{key}"].to_numpy(); hi=s[f"ci95_upper_percent_{key}"].to_numpy()
         ax.errorbar(x,y,yerr=[y-lo,hi-y],marker=marker,color=color,linewidth=1.8,markersize=5,capsize=3,label=label)
-    ax.set_xticks(x,[f"{n}\nn={c:,}" for n,c in zip(x,s.n_families)]); ax.set_ylim(0,100)
+    ax.set_xticks(x,[f"{n}\nn={c:,}" for n,c in zip(x,s.n_families)]); ax.set_xlim(.5, MAX_FAMILY_SIZE + .5); ax.set_ylim(0,100)
     ax.set_xlabel("People in household / sampled households (n)"); ax.set_ylabel("Households below threshold (%)")
     ax.set_title(f"{kind.title()} households: poverty rates by family size (95% Wilson CI)")
     ax.legend(); ax.grid(alpha=.22); fig.tight_layout(); save_png_and_pdf(fig,path); plt.close(fig)
@@ -154,7 +156,8 @@ def draw_rates(s,kind,path):
 def draw_metric(s,kind,metric,ylabel,title,path):
     apply_publication_style(); x=s.family_size.to_numpy(); fig,ax=plt.subplots(figsize=(FIGURE_WIDTH_IN,4.8))
     for key,label,color,marker in SERIES: ax.plot(x,s[f"{metric}_{key}"],marker=marker,color=color,linewidth=1.8,markersize=6,label=label)
-    ax.set_xticks(x,[f"{n}\nn={c:,}" for n,c in zip(x,s.n_families)]); ax.set_xlabel("People in household / sampled households (n)")
+    ax.set_xticks(x,[f"{n}\nn={c:,}" for n,c in zip(x,s.n_families)]); ax.set_xlim(.5, MAX_FAMILY_SIZE + .5)
+    ax.set_xlabel("People in household / sampled households (n)")
     ax.set_ylabel(ylabel); ax.set_title(f"{kind.title()} households: {title}"); ax.legend(); ax.grid(alpha=.22)
     fig.tight_layout(); save_png_and_pdf(fig,path); plt.close(fig)
 
