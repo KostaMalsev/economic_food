@@ -131,13 +131,21 @@ def summarize_overall(data, sensitivity=False):
                      "fgt2_percent":100*(gaps**2).sum()/total})
     return pd.DataFrame(rows)
 
-def draw_thresholds(t, zl, zu, kind, path):
+def draw_thresholds(t, households, zl, zu, kind, path):
     apply_publication_style(); fig,ax=plt.subplots(figsize=(FIGURE_WIDTH_IN,4.8))
+    rng = np.random.default_rng(20260928)
+    foodnorm_points = households[households.persons_count.between(1, MAX_FAMILY_SIZE)]
+    foodnorm_x = foodnorm_points.persons_count + rng.uniform(-.10, .10, len(foodnorm_points))
+    ax.scatter(foodnorm_x, foodnorm_points[f"FoodNorm-{kind}"], s=9, alpha=.10,
+               color="#2478a8", edgecolors="none", zorder=1)
     for sample,key,color in ((zl,"zl","#e67e22"),(zu,"zu","#7251a3")):
         plotted = sample[sample.persons_count.between(1, MAX_FAMILY_SIZE)]
-        ax.scatter(plotted.persons_count,plotted[f"candidate_{key}_{kind}"],s=12,alpha=.2,color=color,edgecolors="none")
+        sample_x = plotted.persons_count + rng.uniform(-.10, .10, len(plotted))
+        ax.scatter(sample_x, plotted[f"candidate_{key}_{kind}"], s=14, alpha=.25,
+                   color=color, edgecolors="none", zorder=2)
     for col,label,color,marker in (("FoodNorm","FoodNorm mean","#2478a8","o"),("ZL","Empirical ZL mean","#e67e22","s"),("ZU","Empirical ZU mean","#7251a3","^")):
-        ax.plot(t.persons_count,t[col],marker=marker,color=color,linewidth=1.8,markersize=6,label=label)
+        ax.plot(t.persons_count,t[col],marker=marker,color=color,linewidth=1.8,
+                markersize=6,label=label,zorder=4)
     ax.set_xticks(t.persons_count); ax.set_xlim(.5, MAX_FAMILY_SIZE + .5)
     ax.set_xlabel("People in household"); ax.set_ylabel("NIS/month")
     ax.set_title(f"{kind.title()} households: empirical FoodNorm, ZL and ZU by family size")
@@ -181,7 +189,7 @@ def run_kind(households,kind,output):
     by_size.to_csv(target/f"{kind}_poverty_metrics_by_family_size.csv",index=False,float_format="%.10f"); overall.to_csv(target/f"{kind}_overall_poverty_metrics.csv",index=False,float_format="%.10f")
     summarize_by_size(data,True).to_csv(target/f"{kind}_zu_minus_5pct_sensitivity_by_family_size.csv",index=False,float_format="%.10f")
     summarize_overall(data,True).to_csv(target/f"{kind}_zu_minus_5pct_sensitivity_overall.csv",index=False,float_format="%.10f")
-    draw_thresholds(thresholds,zl,zu,kind,target/f"{kind}_01_thresholds.png"); draw_rates(by_size,kind,target/f"{kind}_02_poverty_rates_by_family_size.png")
+    draw_thresholds(thresholds,households,zl,zu,kind,target/f"{kind}_01_thresholds.png"); draw_rates(by_size,kind,target/f"{kind}_02_poverty_rates_by_family_size.png")
     draw_overall(overall,kind,target/f"{kind}_03_overall_poverty_rates.png")
     draw_metric(by_size,kind,"mean_depth_percent","Mean poverty depth among poor households (%)","poverty depth by family size",target/f"{kind}_04_poverty_depth_percent.png")
     draw_metric(by_size,kind,"fgt2_percent","FGT₂ × 100 (%)","FGT₂ poverty severity",target/f"{kind}_05_fgt2_poverty_severity.png")
